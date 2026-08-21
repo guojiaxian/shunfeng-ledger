@@ -1,0 +1,23 @@
+# Gradle
+.gradle/
+build/
+app/build/
+local.properties
+captures/
+
+# IntelliJ IDEA / Android Studio
+.idea/
+*.iml
+.DS_Store
+
+# 签名密钥（私钥与密码不得入库）
+*.jks
+*.keystore
+
+# 构建产物
+*.apk
+!release/*.apk
+output.json
+
+# 本地/环境相关
+mise.toml

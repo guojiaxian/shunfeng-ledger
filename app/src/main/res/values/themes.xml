@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.ShunfengLedger" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="android:windowBackground">#FBF9F3</item>
+        <!-- 沉浸式：内容绘制到系统栏之下，栏背景透明 -->
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <!-- 白底主题：使用深色系统栏图标 -->
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+    </style>
+</resources>

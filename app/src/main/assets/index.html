@@ -1,0 +1,3853 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#FBF9F3" />
+<title>顺风 · 账本</title>
+<!-- Google Fonts：非阻塞加载（字体不阻塞页面渲染，网络不通时回退系统字体） -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="preload" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,700&family=Manrope:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,700&family=Manrope:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" /></noscript>
+<!-- Tesseract.js OCR 引擎（本地打包，defer 不阻塞渲染） -->
+<script src="tesseract.min.js" defer></script>
+<!-- html2canvas：网页截图（本地打包，defer 不阻塞渲染） -->
+<script src="html2canvas.min.js" defer></script>
+<style>
+  /* ---------- Design Tokens ---------- */
+  :root{
+    /* 白底暖纸主题 */
+    --ink: #FBF9F3;        /* 页面底色：暖白 */
+    --ink-2: #FFFFFF;      /* 卡片/弹窗：纯白 */
+    --ink-3: #F6F1E5;      /* 表面：暖米色 */
+    --surface: #EFE7D6;
+    --surface-2: #E4D9C2;
+    --line: rgba(42,35,30,0.08);
+    --line-strong: rgba(42,35,30,0.16);
+    --paper: #2A231E;      /* 主文字：深棕 */
+    --paper-dim: #6E6357;  /* 次要文字 */
+    --muted: #9B8E7E;
+    --muted-2: #B8AE9E;
+    --gold: #D49815;       /* 金黄主色 */
+    --gold-soft: #E6A823;
+    --gold-deep: #A8760A;
+    --green: #6B9E5E;
+    --green-deep: #5A8A4E;
+    --red: #C8553A;
+    --gaode: #2E8B7E;      /* 高德 teal（加深以适应白底） */
+    --didi: #D9682A;       /* 滴滴 orange（加深） */
+    --shadow: 0 1px 0 rgba(255,255,255,0.6) inset, 0 8px 28px -14px rgba(42,35,30,0.22);
+    --r-sm: 10px;
+    --r-md: 16px;
+    --r-lg: 22px;
+    --r-xl: 28px;
+    --ease: cubic-bezier(.2,.7,.2,1);
+    /* 沉浸式安全区域：原生注入覆盖，env() 作为兜底 */
+    --sat: env(safe-area-inset-top, 0px);
+    --sab: env(safe-area-inset-bottom, 0px);
+  }
+
+  *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background: var(--ink);
+    color: var(--paper);
+    font-family: 'Manrope', system-ui, sans-serif;
+    font-feature-settings: "ss01","cv01";
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.5;
+    min-height: 100vh;
+    overflow-x: hidden;
+    /* 沉浸式：避开状态栏与导航栏 */
+    padding-top: var(--sat);
+    padding-bottom: var(--sab);
+    /* layered atmosphere：白底上的金黄光晕 */
+    background-image:
+      radial-gradient(1200px 600px at 80% -10%, rgba(230,168,35,0.14), transparent 60%),
+      radial-gradient(900px 500px at -10% 10%, rgba(46,139,126,0.05), transparent 60%),
+      radial-gradient(700px 500px at 50% 120%, rgba(217,104,42,0.05), transparent 60%);
+  }
+  /* subtle grain */
+  body::before{
+    content:"";
+    position: fixed; inset:0;
+    pointer-events:none; z-index:0;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.035 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+    opacity:.5;
+    mix-blend-mode: multiply;
+  }
+
+  /* ---------- Typography ---------- */
+  .serif{ font-family:'Fraunces', Georgia, serif; font-optical-sizing:auto; }
+  .mono{ font-family:'JetBrains Mono', ui-monospace, monospace; font-feature-settings:"tnum"; }
+  .tnum{ font-variant-numeric: tabular-nums; }
+
+  /* ---------- Layout ---------- */
+  .app{
+    position:relative; z-index:1;
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 0 18px 140px;
+  }
+
+  /* Header */
+  header.top{
+    margin: 0 -18px;
+    padding: 14px 18px 12px;
+    border-bottom: 1px solid var(--line);
+    background: rgba(251,249,243,0.6);
+  }
+  .top-row{ display:flex; align-items:center; justify-content:space-between; gap:14px; }
+  .brand{ display:flex; align-items:center; gap:10px; }
+  .brand .mark{
+    width:34px; height:34px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    filter: drop-shadow(0 4px 10px rgba(230,168,35,.35));
+  }
+  .brand .mark svg{ width:100%; height:100%; display:block; }
+  .brand h1{
+    font-family:'Fraunces', serif;
+    font-weight:500; font-size:22px; letter-spacing:-0.01em;
+    margin:0; line-height:1;
+  }
+  .brand .sub{ font-size:11px; color:var(--muted); letter-spacing:.18em; text-transform:uppercase; margin-top:3px;}
+  .date-pill{
+    font-size:12px; color:var(--paper-dim);
+    padding:7px 23px; border-radius:999px;
+    background: rgba(42,35,30,0.05);
+    border:1px solid var(--line);
+    display:flex; align-items:center; gap:7px;
+    white-space:nowrap; flex-shrink:0;
+  }
+  .date-pill .dot{ width:6px; height:6px; border-radius:50%; background:var(--gold); box-shadow:0 0 10px var(--gold);}
+  .top-right{ display:flex; align-items:center; gap:10px; }
+  .icon-btn{
+    appearance:none; cursor:pointer; border:1px solid var(--line);
+    background: rgba(42,35,30,.04); color: var(--paper-dim);
+    width:34px; height:34px; border-radius:10px;
+    display:flex; align-items:center; justify-content:center;
+    transition: all .2s var(--ease);
+  }
+  .icon-btn:hover{ color: var(--paper); border-color: var(--line-strong); background: rgba(42,35,30,.08); }
+  .icon-btn svg{ width:16px; height:16px; }
+
+  /* Settings modal */
+  .settings-desc{ font-size:13px; color: var(--paper-dim); margin: 0 0 16px; line-height:1.6; }
+  .settings-actions{ display:flex; flex-direction:column; gap:10px; }
+  .settings-actions .btn{ flex:1; display:flex; align-items:center; justify-content:center; gap:8px; }
+  .settings-actions .btn svg{ width:15px; height:15px; }
+  .settings-hint{
+    margin-top:16px; padding:12px 14px; border-radius: var(--r-md);
+    background: rgba(230,168,35,.08); border:1px solid rgba(230,168,35,.22);
+    font-size:12px; color: var(--paper-dim); line-height:1.7;
+  }
+  .settings-hint b{ color: var(--gold-soft); font-weight:600; }
+
+  /* Hero / quick stats */
+  .hero{
+    margin-top: 22px;
+    display:grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 14px;
+  }
+  .hero-main{
+    position:relative; overflow:hidden;
+    background:
+      radial-gradient(120% 100% at 100% 0%, rgba(230,168,35,0.16), transparent 55%),
+      linear-gradient(180deg, var(--ink-3), var(--ink-2));
+    border:1px solid var(--line-strong);
+    border-radius: var(--r-xl);
+    padding: 22px 22px 20px;
+    box-shadow: var(--shadow);
+  }
+  .hero-main::before{
+    content:""; position:absolute; right:-40px; top:-40px;
+    width:220px; height:220px; border-radius:50%;
+    background: radial-gradient(circle, rgba(230,168,35,.22), transparent 65%);
+    filter: blur(8px);
+  }
+  .hero-label{
+    font-size:11px; letter-spacing:.22em; text-transform:uppercase;
+    color: var(--muted); display:flex; align-items:center; gap:8px;
+  }
+  .hero-label .seg{ padding:3px 8px; border-radius:999px; background: rgba(42,35,30,.06); border:1px solid var(--line);}
+  .hero-amount{
+    font-family:'Manrope', system-ui, sans-serif; font-weight:700;
+    font-size: 54px; line-height:1.05; letter-spacing:-0.02em;
+    margin: 12px 0 4px;
+    display:flex; align-items:baseline; gap:6px;
+  }
+  .hero-amount .cur{ font-size:22px; color: var(--gold-soft); font-weight:300; }
+  .hero-amount .int{ }
+  .hero-amount .dec{ font-size:30px; color: var(--paper-dim); }
+  .hero-meta{ display:flex; gap:18px; margin-top:14px; flex-wrap:wrap; }
+  .hero-meta .item{ display:flex; align-items:center; gap:7px; font-size:13px; color: var(--paper-dim); }
+  .hero-meta .item b{ color: var(--paper); font-weight:600; }
+  .delta{ font-size:12px; padding:3px 8px; border-radius:999px; font-weight:600;}
+  .delta.up{ color: var(--green); background: rgba(143,184,107,.12); }
+  .delta.down{ color: var(--red); background: rgba(217,106,74,.12); }
+  .delta.flat{ color: var(--muted); background: rgba(42,35,30,.05); }
+
+  .hero-side{ display:grid; grid-template-rows: 1fr 1fr; gap:14px; }
+  .stat-card{
+    background: var(--ink-3);
+    border:1px solid var(--line);
+    border-radius: var(--r-lg);
+    padding: 16px 16px;
+    display:flex; flex-direction:column; justify-content:space-between;
+    box-shadow: var(--shadow);
+    position:relative; overflow:hidden;
+  }
+  .stat-card .k{ font-size:11px; letter-spacing:.18em; text-transform:uppercase; color: var(--muted); }
+  .stat-card .v{ font-family:'Manrope', system-ui, sans-serif; font-weight:600; font-size: 30px; letter-spacing:-0.01em; margin-top:6px;}
+  .stat-card .v .cur{ font-size:14px; color: var(--muted); margin-right:2px;}
+  .stat-card .hint{ font-size:11px; color: var(--muted-2); margin-top:2px;}
+
+  /* Tabs */
+  .tabs{
+    margin: 26px 0 18px;
+    display:flex; gap:6px;
+    background: rgba(42,35,30,.04);
+    border:1px solid var(--line);
+    padding:5px; border-radius: 999px;
+    width: fit-content;
+  }
+  .tab{
+    appearance:none; border:0; background:transparent; cursor:pointer;
+    color: var(--muted); font-family:inherit; font-size:13px; font-weight:600;
+    padding: 9px 18px; border-radius:999px; letter-spacing:.02em;
+    display:flex; align-items:center; gap:7px;
+    transition: color .2s var(--ease), background .2s var(--ease), transform .2s var(--ease);
+  }
+  .tab .count{
+    font-size:10px; padding:2px 6px; border-radius:999px;
+    background: rgba(42,35,30,.07); color: var(--paper-dim);
+  }
+  .tab:hover{ color: var(--paper); }
+  .tab.active{
+    color: #2A231E; background: var(--gold);
+    box-shadow: 0 6px 20px -8px rgba(230,168,35,.6);
+  }
+  .tab.active .count{ background: rgba(42,35,30,.1); color: var(--paper); }
+
+  /* View switch */
+  .view{ display:none; animation: fade .35s var(--ease); }
+  .view.active{ display:block; }
+  @keyframes fade{ from{ opacity:0; transform: translateY(6px);} to{opacity:1; transform:none;} }
+
+  /* Section title */
+  .sec-head{
+    display:flex; align-items:center; justify-content:space-between;
+    margin: 6px 0 14px;
+  }
+  .sec-head h2{
+    font-family:'Fraunces',serif; font-weight:500; font-size:20px;
+    margin:0; letter-spacing:-0.01em;
+  }
+  .sec-head .tools{ display:flex; gap:8px; align-items:center; }
+  .chip{
+    appearance:none; cursor:pointer; font-family:inherit;
+    background: rgba(42,35,30,.05); color: var(--paper-dim);
+    border:1px solid var(--line); font-size:12px; font-weight:600;
+    padding:7px 12px; border-radius:999px;
+    display:flex; align-items:center; gap:6px;
+    transition: all .2s var(--ease);
+  }
+  .chip:hover{ color: var(--paper); border-color: var(--line-strong);}
+  .chip.active{ background: var(--paper); color: var(--ink); border-color: var(--paper);}
+  .chip svg{ width:13px; height:13px; }
+
+  /* Records */
+  .day-group{ margin-bottom: 22px; }
+  .day-head{
+    display:flex; align-items:baseline; justify-content:space-between;
+    padding: 4px 4px 10px;
+    border-bottom: 1px dashed var(--line);
+    margin-bottom: 10px;
+  }
+  .day-head .d{ font-family:'Fraunces',serif; font-size:16px; font-weight:500; }
+  .day-head .d .wk{ font-size:12px; color: var(--muted); margin-left:8px; font-family:'Manrope'; font-weight:500; }
+  .day-head .sum{ font-size:13px; color: var(--paper-dim); }
+  .day-head .sum b{ color: var(--gold-soft); font-weight:600; }
+
+  .rec-list{ display:flex; flex-direction:column; gap:10px; }
+  .rec{
+    position:relative;
+    background: var(--ink-3);
+    border:1px solid var(--line);
+    border-radius: var(--r-md);
+    padding: 14px 16px 14px 18px;
+    display:grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 14px;
+    align-items:center;
+    box-shadow: 0 1px 0 rgba(255,255,255,.03) inset;
+    transition: transform .2s var(--ease), border-color .2s var(--ease), background .2s var(--ease);
+    animation: rise .4s var(--ease) both;
+  }
+  @keyframes rise{ from{ opacity:0; transform: translateY(8px);} to{opacity:1; transform:none;} }
+  .rec:hover{ border-color: var(--line-strong); transform: translateY(-1px); }
+  .rec::before{
+    content:""; position:absolute; left:0; top:14px; bottom:14px; width:3px; border-radius: 0 3px 3px 0;
+  }
+  .rec.gaode::before{ background: var(--gaode); }
+  .rec.didi::before{ background: var(--didi); }
+
+  .rec .pf{
+    width:42px; height:42px; border-radius: 12px;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Fraunces',serif; font-weight:600; font-size:17px;
+    flex-shrink:0;
+  }
+  .rec.gaode .pf{ background: rgba(46,139,126,.12); color: var(--gaode); border:1px solid rgba(46,139,126,.3);}
+  .rec.didi .pf{ background: rgba(217,104,42,.12); color: var(--didi); border:1px solid rgba(217,104,42,.3);}
+
+  .rec .info{ min-width:0; }
+  .rec .route{
+    font-size:14px; font-weight:600; color: var(--paper);
+    display:flex; flex-direction:column; gap:2px;
+    line-height:1.35; word-break:break-word; overflow-wrap:anywhere;
+  }
+  .rec .route .arrow{ display:none; }
+  .rec .route .from, .rec .route .to{ min-width:0; word-break:break-word; overflow-wrap:anywhere;}
+  .rec .route .to{ color: var(--paper-dim); font-weight:500;}
+  .rec .route .to::before{ content:"↳ "; color: var(--muted-2); font-weight:600;}
+  .rec .meta{
+    font-size:12px; color: var(--muted); margin-top:5px;
+    display:flex; gap:10px; flex-wrap:wrap; align-items:center;
+  }
+  .rec .meta .m{ display:flex; align-items:center; gap:4px;}
+  .rec .meta svg{ width:11px; height:11px; opacity:.8;}
+  .rec .note{ color: var(--paper-dim); font-style: italic; font-size:12px; }
+  .rec .meta .m-bonus{ color: var(--gold-soft); background: rgba(230,168,35,.12); border:1px solid rgba(230,168,35,.25); padding:1px 7px; border-radius:999px; font-weight:600; }
+
+  .rec .amt{
+    text-align:right; flex-shrink:0;
+  }
+  .rec .amt .n{ font-family:'Manrope', system-ui, sans-serif; font-weight:700; font-size:22px; color: var(--gold-soft); letter-spacing:-0.01em;}
+  .rec .amt .n .cur{ font-size:13px; color: var(--muted); margin-right:1px;}
+  .rec .amt .n .dec{ font-size:15px; color: var(--paper-dim);}
+  .rec .amt .per{ font-size:10px; color: var(--muted-2); margin-top:2px;}
+
+  .rec .acts{ display:flex; gap:4px; opacity:0; transition: opacity .2s var(--ease);}
+  .rec:hover .acts, .rec:focus-within .acts{ opacity:1; }
+  .icon-btn{
+    appearance:none; cursor:pointer; border:1px solid var(--line);
+    background: rgba(42,35,30,.04); color: var(--paper-dim);
+    width:30px; height:30px; border-radius:9px;
+    display:flex; align-items:center; justify-content:center;
+    transition: all .2s var(--ease);
+  }
+  .icon-btn:hover{ color: var(--paper); border-color: var(--line-strong); background: rgba(42,35,30,.08); }
+  .icon-btn.danger:hover{ color: var(--red); border-color: rgba(217,106,74,.4); background: rgba(217,106,74,.1); }
+  .icon-btn svg{ width:14px; height:14px;}
+
+  /* FAB */
+  .fab{
+    position: fixed; right: 18px; bottom: max(24px, calc(24px + var(--sab, 0px))); z-index: 40;
+    appearance:none; cursor:pointer; border:0;
+    background: linear-gradient(180deg, var(--gold-soft), var(--gold) 60%, var(--gold-deep));
+    color: var(--ink);
+    font-family:'Manrope',sans-serif; font-weight:700; font-size:14px;
+    padding: 14px 22px 14px 18px; border-radius: 999px;
+    display:flex; align-items:center; gap:9px;
+    box-shadow: 0 14px 36px -10px rgba(230,168,35,.7), 0 2px 0 rgba(255,255,255,.2) inset;
+    transition: transform .2s var(--ease), box-shadow .2s var(--ease);
+  }
+  .fab:hover{ transform: translateY(-2px); box-shadow: 0 18px 40px -10px rgba(230,168,35,.8), 0 2px 0 rgba(255,255,255,.25) inset;}
+  .fab:active{ transform: translateY(0); }
+  .fab .plus{
+    width:24px; height:24px; border-radius:50%;
+    background: rgba(42,35,30,.06); display:flex; align-items:center; justify-content:center;
+  }
+  .fab .plus svg{ width:14px; height:14px;}
+
+  .fab-scan{
+    position: fixed; right: 18px; bottom: max(88px, calc(88px + var(--sab, 0px))); z-index: 40;
+    appearance:none; cursor:pointer; border:0;
+    width:46px; height:46px; border-radius:50%;
+    background: linear-gradient(180deg, var(--ink-3), var(--ink-2));
+    color: var(--gold-deep);
+    border:1px solid var(--line-strong);
+    display:flex; align-items:center; justify-content:center;
+    box-shadow: var(--shadow);
+    transition: all .2s var(--ease);
+  }
+  .fab-scan:hover{ transform: translateY(-2px); color: var(--paper); }
+  .fab-scan:active{ transform: translateY(0); }
+  .fab-scan svg{ width:22px; height:22px; }
+
+  /* OCR overlay (进度 + 结果预览) */
+  .ocr-wrap{ padding: 18px 20px 6px; }
+  .ocr-steps{ display:flex; flex-direction:column; gap:10px; }
+  .ocr-step{
+    display:flex; align-items:center; gap:12px;
+    font-size:13px; color: var(--paper-dim);
+  }
+  .ocr-step .tag{
+    width:24px; height:24px; border-radius:50%;
+    background: rgba(42,35,30,.06); color: var(--muted);
+    display:flex; align-items:center; justify-content:center;
+    font-size:11px; font-weight:700; flex-shrink:0;
+  }
+  .ocr-step.done .tag{ background: var(--gold); color: #2A231E; }
+  .ocr-step.done{ color: var(--paper); }
+
+  .ocr-bar{
+    margin: 10px 0 0;
+    height:6px; background: rgba(42,35,30,.06); border-radius:999px; overflow:hidden;
+  }
+  .ocr-bar .fill{
+    height:100%; width:0%; background: linear-gradient(90deg, var(--gold-soft), var(--gold));
+    transition: width .25s var(--ease);
+    border-radius:999px;
+  }
+  .ocr-tip{ font-size:11px; color: var(--muted); margin-top:6px; }
+
+  /* OCR 结果预览（预填） */
+  .ocr-result{
+    margin: 14px 0 4px; padding: 14px 15px;
+    background: rgba(230,168,35,.07);
+    border:1px solid rgba(230,168,35,.25);
+    border-radius: var(--r-md);
+  }
+  .ocr-result .title{
+    display:flex; align-items:center; justify-content:space-between;
+    font-size:13px; font-weight:700; color: var(--gold-deep); margin-bottom:10px;
+  }
+  .ocr-result .title .plat{
+    font-size:11px; color: var(--paper-dim); font-weight:600; font-family:'Manrope';
+    padding: 3px 8px; border-radius:999px;
+    background: rgba(42,35,30,.06);
+  }
+  .ocr-result .row{
+    display:grid; grid-template-columns: 78px 1fr; gap:6px;
+    padding: 6px 0; border-bottom: 1px dashed rgba(42,35,30,.07);
+    font-size:13px;
+  }
+  .ocr-result .row:last-child{ border-bottom: 0; }
+  .ocr-result .row .k{ color: var(--muted); }
+  .ocr-result .row .v{ color: var(--paper); font-weight:600; min-width: 0; }
+  .ocr-result .row .v.warn{ color: var(--red); }
+  .ocr-result .row .v.amt{ color: var(--gold-deep); font-weight:700; font-family:'Manrope', system-ui, sans-serif; font-size:15px; }
+  .ocr-result .row .v#ocrDistance{ color: var(--gold-deep); font-weight:700; font-family:'Manrope', system-ui, sans-serif; }
+  .ocr-result .row .v#ocrDistance.hint{ color: var(--muted); font-weight:500; }
+  .ocr-result .row .v#ocrDistance.err{ color: var(--red); font-weight:600; }
+  .ocr-result .row .v#ocrDuration{ color: var(--gold-deep); font-weight:700; font-family:'Manrope', system-ui, sans-serif; }
+  .ocr-result .row .v#ocrDuration.hint{ color: var(--muted); font-weight:500; }
+  .ocr-result .row .v#ocrDuration.err{ color: var(--red); font-weight:600; }
+  /* 里程估算候选选择 */
+  .ocr-cands{ margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+  .ocr-cand{
+    appearance:none; cursor:pointer; text-align:left;
+    padding: 9px 11px; border-radius: var(--r-sm);
+    border: 1px solid var(--line-strong); background: rgba(42,35,30,.03);
+    font-size:12.5px; color: var(--paper); line-height:1.45;
+  }
+  .ocr-cand .d{ font-weight:600; }
+  .ocr-cand .m{ color: var(--gold-deep); font-weight:700; font-family:'Manrope', system-ui, sans-serif; }
+  .ocr-cand.on{ border-color: var(--gold); background: rgba(230,168,35,.14); }
+  .ocr-review{
+    display:flex; gap:10px; margin-top:14px;
+  }
+  .ocr-review .btn{ flex:1; }
+
+  /* Raw 折叠文本 */
+  .ocr-raw-toggle{
+    margin-top:10px; appearance:none; background:transparent; border:0; cursor:pointer;
+    color: var(--muted); font-size:11px; font-weight:600;
+  }
+  .ocr-raw{
+    margin-top: 8px; padding: 10px 12px; border-radius: var(--r-sm);
+    background: rgba(42,35,30,.04); border:1px solid var(--line);
+    font-family:'JetBrains Mono', monospace; font-size:11px; line-height:1.7;
+    color: var(--paper-dim); max-height: 140px; overflow:auto; white-space: pre-wrap; word-break:break-all;
+    display:none;
+  }
+  .ocr-raw.show{ display:block; }
+
+  /* OCR 设置面板（折叠区） */
+  .ocr-settings-toggle{
+    width:100%; appearance:none; cursor:pointer;
+    border:1px solid var(--line);
+    background: var(--ink-3);
+    border-radius: var(--r-md);
+    display:flex; align-items:center; gap:12px;
+    font-family:inherit; font-size:13px; font-weight:700;
+    color: var(--gold-deep);
+    padding: 12px 14px;
+    box-shadow: var(--shadow);
+    transition: border-color .2s var(--ease), background .2s var(--ease);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .ocr-settings-toggle:hover{ border-color: var(--line-strong); }
+  .ocr-settings-toggle .ico{
+    width:32px; height:32px; border-radius:10px; flex-shrink:0;
+    background: radial-gradient(circle at 30% 30%, var(--gold-soft), var(--gold) 55%, var(--gold-deep));
+    display:flex; align-items:center; justify-content:center;
+    color: var(--ink); box-shadow: 0 4px 12px -4px rgba(230,168,35,.6);
+  }
+  .ocr-settings-toggle .ico svg{ width:16px; height:16px; }
+  .ocr-settings-toggle .t{ flex:1; text-align:left; min-width:0; }
+  .ocr-settings-toggle .t .sub{
+    display:block; font-size:10px; font-weight:500; color: var(--muted);
+    letter-spacing:.05em; margin-top:2px; text-transform:uppercase;
+  }
+  .ocr-settings-toggle .caret{
+    transition: transform .25s var(--ease);
+    font-size:11px; color: var(--muted); font-family:'JetBrains Mono',monospace;
+    flex-shrink:0;
+  }
+  .ocr-settings-panel.open + * + .ocr-settings-toggle .caret,
+  body:has(.ocr-settings-panel.open) #ocrSettingsCaret{
+    transform: rotate(180deg);
+  }
+  .ocr-settings-panel{
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height .35s var(--ease), padding .35s var(--ease);
+    padding: 0;
+  }
+  .ocr-settings-panel.open{
+    max-height: none;
+    overflow: visible;
+    padding: 14px 2px 2px;
+  }
+  /* LLM 设置块：与主界面卡片风格一致 */
+  .llm-block{
+    background: var(--ink-3);
+    border:1px solid var(--line);
+    border-radius: var(--r-md);
+    padding: 16px;
+    box-shadow: var(--shadow);
+  }
+  .llm-block .llm-head{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    margin-bottom: 4px;
+  }
+  .llm-block .llm-title{
+    font-family:'Fraunces',serif; font-weight:500; font-size:16px;
+    color: var(--paper); letter-spacing:-0.01em; margin:0;
+    display:flex; align-items:center; gap:8px;
+  }
+  .llm-block .llm-title .tag{
+    font-size:10px; padding:2px 8px; border-radius:999px;
+    background: rgba(230,168,35,.16); color: var(--gold-deep);
+    font-weight:700; font-family:'Manrope'; white-space:nowrap;
+  }
+  .llm-block .llm-desc{ font-size:11px; color: var(--muted); line-height:1.6; margin: 0 0 14px; }
+  .llm-block .llm-field{ margin-bottom: 12px; }
+  .llm-block .llm-field:last-child{ margin-bottom: 0; }
+  .llm-block .llm-field label{
+    display:block; font-size:10px; letter-spacing:.14em; text-transform:uppercase;
+    color: var(--muted); font-weight:700; margin-bottom:6px;
+  }
+  .llm-block .llm-field .input{ margin-top:0; }
+  .llm-block .llm-actions{ display:flex; gap:8px; margin-top: 16px; padding-top: 14px; border-top:1px dashed var(--line); }
+  .llm-block .llm-actions .btn{ flex:1; padding: 12px 12px; font-size:13px; }
+  .llm-block .llm-hint{
+    margin-top:14px; padding:11px 12px; border-radius: var(--r-sm);
+    background: rgba(230,168,35,.08); border:1px solid rgba(230,168,35,.22);
+    font-size:11px; color: var(--paper-dim); line-height:1.7;
+  }
+  .llm-block .llm-hint b{ color: var(--gold-soft); font-weight:600; }
+  .llm-block .llm-hint a{ color: var(--gold-soft); text-decoration:underline; }
+  .llm-block .llm-test{
+    margin-top:12px; font-size:12px; line-height:1.6; min-height:16px;
+    padding: 10px 12px; border-radius: var(--r-sm); background: rgba(42,35,30,.03);
+  }
+  .llm-block .llm-test:empty{ display:none; }
+  .eng-opt{
+    display:flex; align-items:center; gap:8px;
+    padding: 9px 12px;
+    border:1px solid var(--line);
+    background: var(--ink-3);
+    border-radius: var(--r-sm);
+    cursor:pointer;
+    font-size:12px; font-weight:600; color: var(--paper-dim);
+    transition: all .2s var(--ease);
+  }
+  .eng-opt:hover{ border-color:var(--line-strong); color:var(--paper);}
+  .eng-opt:has(input:checked){
+    background: rgba(230,168,35,.14);
+    border-color: var(--gold);
+    color: var(--gold-deep);
+  }
+  .eng-opt input{ accent-color: var(--gold); }
+
+  /* Empty state */
+  .empty{
+    text-align:center; padding: 60px 20px;
+    color: var(--muted);
+  }
+  .empty .ico{
+    width:74px; height:74px; margin: 0 auto 18px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, rgba(230,168,35,.18), rgba(230,168,35,.04) 70%);
+    border:1px dashed var(--line-strong);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .empty .ico svg{ width:30px; height:30px; color: var(--gold);}
+  .empty h3{ font-family:'Fraunces',serif; font-weight:500; font-size:19px; color: var(--paper); margin: 0 0 6px;}
+  .empty p{ font-size:13px; margin: 0 0 18px; max-width: 320px; margin-inline:auto;}
+
+  /* Stats */
+  .stats-grid{
+    display:grid; grid-template-columns: repeat(2, 1fr); gap:12px;
+    margin-bottom: 18px;
+  }
+  .stat-mini{
+    background: var(--ink-3); border:1px solid var(--line);
+    border-radius: var(--r-md); padding: 14px 16px;
+    box-shadow: var(--shadow);
+  }
+  .stat-mini .k{ font-size:11px; letter-spacing:.16em; text-transform:uppercase; color: var(--muted); }
+  .stat-mini .v{ font-family:'Manrope', system-ui, sans-serif; font-weight:600; font-size:24px; margin-top:6px; letter-spacing:-0.01em;}
+  .stat-mini .v .cur{ font-size:13px; color: var(--muted);}
+  .stat-mini .v .dec{ font-size:15px; color: var(--paper-dim);}
+  .stat-mini .sub{ font-size:11px; color: var(--muted-2); margin-top:3px;}
+
+  .panel{
+    background: var(--ink-3);
+    border:1px solid var(--line-strong);
+    border-radius: var(--r-lg);
+    padding: 20px 18px;
+    box-shadow: var(--shadow);
+    margin-bottom: 16px;
+  }
+  .panel-head{
+    display:flex; align-items:center; justify-content:space-between;
+    gap: 12px; flex-wrap: nowrap;
+    margin-bottom: 16px;
+  }
+  .panel-head h3{
+    font-family:'Fraunces',serif; font-weight:500; font-size:17px;
+    margin:0; letter-spacing:-0.01em;
+    display:flex; align-items:center; gap:8px;
+    flex-shrink: 1; min-width: 0;
+    white-space: nowrap;
+  }
+  .panel-head h3 .badge{ font-size:10px; padding:3px 7px; border-radius:999px; background: rgba(230,168,35,.14); color: var(--gold-soft); border:1px solid rgba(230,168,35,.25); letter-spacing:.06em; flex-shrink:0;}
+  .panel-head .legend{
+    margin-top: 0;
+    gap: 10px;
+    flex-wrap: nowrap;
+    flex-shrink: 0;
+  }
+
+  .chart-wrap{ width:100%; }
+  .chart-wrap svg{ display:block; width:100%; height:auto; }
+
+  .legend{ display:flex; gap:14px; flex-wrap:wrap; margin-top:12px; }
+  .legend .li{ display:flex; align-items:center; gap:6px; font-size:12px; color: var(--paper-dim); white-space:nowrap;}
+  .legend .sw{ width:10px; height:10px; border-radius:3px; flex-shrink:0;}
+  .legend .li b{ color: var(--paper); font-weight:600;}
+
+  .pf-breakdown{ display:flex; flex-direction:column; gap:12px; margin-top:6px; }
+  .pf-row{ }
+  .pf-row .top{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px;}
+  .pf-row .name{ display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; color: var(--paper);}
+  .pf-row .name .sw{ width:10px; height:10px; border-radius:3px;}
+  .pf-row .vals{ font-size:13px; color: var(--paper-dim); }
+  .pf-row .vals b{ color: var(--gold-soft); font-weight:700; font-family:'Manrope', system-ui, sans-serif; font-size:15px;}
+  .bar-track{ height:8px; background: rgba(42,35,30,.05); border-radius:99px; overflow:hidden;}
+  .bar-fill{ height:100%; border-radius:99px; transition: width .6s var(--ease); }
+
+  /* Modal */
+  .overlay{
+    position: fixed; inset:0; z-index:60;
+    background: rgba(42,35,30,.4);
+    backdrop-filter: blur(6px);
+    display:flex; align-items:flex-end; justify-content:center;
+    padding-bottom: var(--sab);
+    opacity:0; pointer-events:none; transition: opacity .25s var(--ease);
+  }
+  .overlay.show{ opacity:1; pointer-events:auto; }
+  .modal{
+    width:100%; max-width: 520px;
+    background: var(--ink-2);
+    border:1px solid var(--line-strong);
+    border-bottom:0;
+    border-radius: var(--r-xl) var(--r-xl) 0 0;
+    padding: 20px 20px 24px;
+    box-shadow: 0 -20px 60px -10px rgba(42,35,30,.25);
+    transform: translateY(100%);
+    transition: transform .35s var(--ease);
+    max-height: calc(92dvh - var(--sat, 0px) - var(--sab, 0px));
+    overflow-y:auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+  .overlay.show .modal{ transform: translateY(0); }
+  .modal-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom: 18px;}
+  .modal-head h3{ font-family:'Fraunces',serif; font-weight:500; font-size:20px; margin:0; letter-spacing:-0.01em;}
+  .modal-head .close{
+    appearance:none; cursor:pointer; background: rgba(42,35,30,.05); border:1px solid var(--line);
+    width:32px; height:32px; border-radius:10px; color: var(--paper-dim);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .modal-head .close:hover{ color: var(--paper); }
+  .modal-head .close svg{ width:16px; height:16px;}
+
+  .field{ margin-bottom: 14px; }
+  .field label{ display:block; font-size:11px; letter-spacing:.16em; text-transform:uppercase; color: var(--muted); margin-bottom:7px; font-weight:600;}
+  .field .req{ color: var(--gold);}
+
+  .pf-pick{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+  .pf-opt{
+    appearance:none; cursor:pointer;
+    border:1px solid var(--line); background: rgba(42,35,30,.03);
+    color: var(--paper-dim); font-family:inherit; font-weight:600; font-size:14px;
+    padding: 14px; border-radius: var(--r-md);
+    display:flex; align-items:center; justify-content:center; gap:9px;
+    transition: all .2s var(--ease);
+  }
+  .pf-opt .dot{ width:10px; height:10px; border-radius:50%; }
+  .pf-opt[data-pf="gaode"] .dot{ background: var(--gaode);}
+  .pf-opt[data-pf="didi"] .dot{ background: var(--didi);}
+  .pf-opt:hover{ color: var(--paper); border-color: var(--line-strong);}
+  .pf-opt.sel[data-pf="gaode"]{ background: rgba(46,139,126,.14); border-color: var(--gaode); color: var(--gaode);}
+  .pf-opt.sel[data-pf="didi"]{ background: rgba(217,104,42,.14); border-color: var(--didi); color: var(--didi);}
+
+  .row2{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+  .row3{ display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; }
+
+  .input, .textarea, .select{
+    appearance:none; width:100%;
+    background: rgba(42,35,30,.04);
+    border:1px solid var(--line);
+    color: var(--paper); font-family:inherit; font-size:15px;
+    padding: 13px 14px; border-radius: var(--r-md);
+    transition: border-color .2s var(--ease), background .2s var(--ease);
+    font-feature-settings:"tnum";
+  }
+  .input:focus, .textarea:focus, .select:focus{
+    outline:none; border-color: var(--gold); background: rgba(42,35,30,.06);
+  }
+  .input::placeholder, .textarea::placeholder{ color: var(--muted-2);}
+  .textarea{ resize: none; min-height: 64px; font-family:inherit;}
+  .select{ appearance:none; -webkit-appearance:none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239B8E7E' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+    background-repeat:no-repeat; background-position: right 14px center; padding-right: 38px;
+  }
+
+  .modal-foot{
+    display:flex; gap:10px; margin-top: 20px;
+    position: sticky; bottom: -24px; margin: 20px -20px -24px;
+    padding: 14px 20px;
+    background: linear-gradient(180deg, transparent, var(--ink-2) 30%);
+  }
+  .btn{
+    appearance:none; cursor:pointer; font-family:inherit; font-weight:700; font-size:14px;
+    border-radius: var(--r-md); padding: 14px 18px; border:1px solid var(--line-strong);
+    background: rgba(42,35,30,.05); color: var(--paper-dim);
+    flex:1; transition: all .2s var(--ease);
+  }
+  .btn:hover{ color: var(--paper); background: rgba(42,35,30,.09);}
+  .btn.primary{
+    background: linear-gradient(180deg, var(--gold-soft), var(--gold) 60%, var(--gold-deep));
+    color: var(--ink); border-color: transparent;
+    box-shadow: 0 8px 24px -8px rgba(230,168,35,.6);
+  }
+  .btn.primary:hover{ filter: brightness(1.05);}
+  .btn.danger{ color: var(--red); border-color: rgba(217,106,74,.3);}
+
+  /* Toast */
+  .toast-wrap{
+    position: fixed; bottom: 96px; left:50%; transform: translateX(-50%);
+    z-index: 80; display:flex; flex-direction:column; gap:8px; align-items:center;
+    pointer-events:none;
+  }
+  .toast{
+    background: var(--ink-2); border:1px solid var(--line-strong);
+    color: var(--paper); font-size:13px; font-weight:500;
+    padding: 11px 18px; border-radius: 999px;
+    box-shadow: 0 14px 30px -8px rgba(42,35,30,.25);
+    display:flex; align-items:center; gap:9px;
+    animation: toastIn .3s var(--ease);
+  }
+  .toast .ico{ width:18px; height:18px; display:flex; align-items:center; justify-content:center;}
+  .toast.ok .ico{ color: var(--green);}
+  .toast.err .ico{ color: var(--red);}
+  @keyframes toastIn{ from{ opacity:0; transform: translateY(10px);} to{opacity:1; transform:none;} }
+  .toast.out{ animation: toastOut .3s var(--ease) forwards; }
+  @keyframes toastOut{ to{ opacity:0; transform: translateY(10px);} }
+
+  /* Confirm dialog (inline in modal) */
+  .confirm{
+    background: rgba(217,106,74,.08); border:1px solid rgba(217,106,74,.25);
+    border-radius: var(--r-md); padding: 14px;
+    margin-top: 14px;
+  }
+  .confirm p{ margin:0 0 12px; font-size:13px; color: var(--paper);}
+  .confirm .row{ display:flex; gap:10px;}
+  .confirm .btn{ padding: 10px 14px; font-size:13px;}
+
+  /* Responsive */
+  @media (max-width: 640px){
+    .hero{ grid-template-columns: 1fr; }
+    .hero-side{ grid-template-rows: auto; grid-template-columns: 1fr 1fr; }
+    .hero-amount{ font-size: 46px; }
+    .stats-grid{ grid-template-columns: repeat(2, 1fr); }
+    .fab span:not(.plus){ display:none; }
+    .fab{ padding: 14px; }
+    .rec{ grid-template-columns: auto 1fr; }
+    .rec .amt{ grid-column: 2; text-align:left; margin-top: -2px;}
+    .rec .acts{ opacity:1; grid-column: 1 / -1; justify-content:flex-end; margin-top: 4px;}
+    .rec .amt .n{ font-size: 20px;}
+    .row3{ grid-template-columns: 1fr 1fr; }
+    .panel-head{ gap: 8px; }
+    .panel-head h3{ font-size: 16px; gap: 6px; }
+    .panel-head .legend{ gap: 8px; }
+    .panel-head .legend .li{ font-size: 11.5px; gap: 5px; }
+  }
+  @media (max-width: 400px){
+    .stats-grid{ grid-template-columns: repeat(2, 1fr); }
+    .panel-head h3{ font-size: 15px; }
+    .panel-head h3 .badge{ font-size:9.5px; padding:2.5px 6px;}
+    .panel-head .legend .li{ font-size: 11px; gap: 4px; }
+    .panel-head .legend .sw{ width:9px; height:9px; }
+  }
+
+  /* scrollbars */
+  ::-webkit-scrollbar{ width:8px; height:8px; }
+  ::-webkit-scrollbar-thumb{ background: rgba(42,35,30,.1); border-radius:99px;}
+  ::-webkit-scrollbar-track{ background: transparent;}
+
+  /* ---------- Calendar ---------- */
+  .cal-panel{
+    background: var(--ink-3);
+    border:1px solid var(--line-strong);
+    border-radius: var(--r-lg);
+    padding: 20px 18px 16px;
+    box-shadow: var(--shadow);
+    margin-bottom: 16px;
+  }
+  .cal-head{
+    display:flex; align-items:center; justify-content:space-between; gap:14px;
+    margin-bottom: 16px;
+  }
+  .cal-nav{
+    appearance:none; cursor:pointer;
+    width:36px; height:36px; border-radius:11px;
+    background: rgba(42,35,30,.04); border:1px solid var(--line);
+    color: var(--paper-dim);
+    display:flex; align-items:center; justify-content:center;
+    transition: all .2s var(--ease);
+  }
+  .cal-nav:hover{ color: var(--paper); border-color: var(--line-strong); background: rgba(42,35,30,.08); }
+  .cal-nav:active{ transform: scale(.95); }
+  .cal-nav svg{ width:16px; height:16px;}
+  .cal-title{ text-align:center; flex:1; }
+  .cal-title .ym{
+    font-family:'Fraunces',serif; font-weight:500; font-size:22px; letter-spacing:-0.01em;
+    display:flex; align-items:baseline; justify-content:center; gap:6px;
+  }
+  .cal-title .ym .yr{ font-size:13px; color: var(--muted); font-family:'Manrope'; font-weight:500;}
+  .cal-summary{ font-size:12px; color: var(--muted); margin-top:4px; }
+  .cal-summary b{ color: var(--gold-soft); font-weight:700; font-family:'Manrope', system-ui, sans-serif; font-size:13px;}
+
+  .cal-legend{
+    display:flex; align-items:center; justify-content:center; gap:6px;
+    font-size:11px; color: var(--muted); margin-bottom: 14px;
+  }
+  .cal-legend .cal-heat{
+    width:14px; height:14px; border-radius:4px;
+    border:1px solid var(--line);
+  }
+  .cal-legend .cal-heat[data-l="1"]{ background: rgba(230,168,35,0.18);}
+  .cal-legend .cal-heat[data-l="2"]{ background: rgba(230,168,35,0.38);}
+  .cal-legend .cal-heat[data-l="3"]{ background: rgba(230,168,35,0.62);}
+  .cal-legend .cal-heat[data-l="4"]{ background: rgba(230,168,35,0.92);}
+  .cal-legend .cal-today-btn{
+    margin-left: 14px; cursor:pointer; color: var(--muted);
+    padding:3px 10px; border-radius:999px; border:1px solid var(--line);
+    transition: all .2s var(--ease); font-size:11px;
+  }
+  .cal-legend .cal-today-btn:hover{ color: var(--paper); border-color: var(--line-strong); background: rgba(42,35,30,.05);}
+
+  .cal-weekdays{
+    display:grid; grid-template-columns: repeat(7, 1fr); gap:6px;
+    margin-bottom: 8px;
+  }
+  .cal-weekdays span{
+    text-align:center; font-size:11px; color: var(--muted-2);
+    letter-spacing:.1em; font-weight:600; padding: 4px 0;
+  }
+  .cal-grid{
+    display:grid; grid-template-columns: repeat(7, 1fr); gap:6px;
+  }
+  .cal-cell{
+    aspect-ratio: 1 / 1;
+    border-radius: 10px;
+    background: rgba(42,35,30,.025);
+    border:1px solid var(--line);
+    padding: 6px 7px;
+    display:flex; flex-direction:column; justify-content:space-between;
+    cursor:pointer;
+    position:relative; overflow:hidden;
+    transition: transform .15s var(--ease), border-color .2s var(--ease), background .2s var(--ease);
+    min-height: 56px;
+  }
+  .cal-cell:hover{ transform: translateY(-1px); border-color: var(--line-strong);}
+  .cal-cell.empty{ background: transparent; border-color: transparent; cursor:default; pointer-events:none;}
+  .cal-cell.empty:hover{ transform:none; }
+  .cal-cell .d-num{
+    font-size:12px; color: var(--muted); font-weight:600;
+    font-family:'JetBrains Mono', monospace;
+  }
+  .cal-cell.has .d-num{ color: var(--paper-dim); }
+  .cal-cell .d-amt{
+    font-family:'Manrope', system-ui, sans-serif; font-weight:600; font-size:13px;
+    color: var(--gold-soft); line-height:1.1;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .cal-cell .d-amt .cur{ font-size:9px; color: var(--muted); margin-right:1px;}
+  .cal-cell .d-cnt{
+    font-size:9px; color: var(--muted-2); margin-top:1px;
+  }
+  /* heat levels (gaode+didi mix is gold) */
+  .cal-cell.heat-1{ background: rgba(230,168,35,0.10); border-color: rgba(230,168,35,0.18);}
+  .cal-cell.heat-2{ background: rgba(230,168,35,0.22); border-color: rgba(230,168,35,0.30);}
+  .cal-cell.heat-3{ background: rgba(230,168,35,0.40); border-color: rgba(230,168,35,0.45);}
+  .cal-cell.heat-4{ background: rgba(230,168,35,0.62); border-color: rgba(230,168,35,0.65);}
+  .cal-cell.heat-5{ background: rgba(230,168,35,0.90); border-color: rgba(230,168,35,1);}
+  .cal-cell.heat-5 .d-num{ color: var(--ink); }
+  .cal-cell.heat-5 .d-amt{ color: var(--ink); }
+  .cal-cell.heat-5 .d-amt .cur{ color: rgba(20,17,15,.6);}
+  .cal-cell.heat-5 .d-cnt{ color: rgba(20,17,15,.5);}
+
+  .cal-cell.today{ box-shadow: 0 0 0 1.5px var(--gold), 0 6px 16px -6px rgba(230,168,35,.4); }
+  .cal-cell.today .d-num{ color: var(--gold-soft); }
+  .cal-cell.heat-5.today .d-num{ color: var(--ink); }
+
+  .cal-cell.sel{
+    border-color: var(--gold) !important;
+    box-shadow: 0 0 0 1.5px var(--gold), 0 8px 22px -8px rgba(230,168,35,.55);
+    transform: translateY(-1px);
+  }
+
+  /* platform mini dots in cell */
+  .cal-cell .d-pf{
+    position:absolute; top:6px; right:6px;
+    display:flex; gap:2px;
+  }
+  .cal-cell .d-pf .pd{ width:5px; height:5px; border-radius:50%;}
+  .cal-cell .d-pf .pd.gaode{ background: var(--gaode);}
+  .cal-cell .d-pf .pd.didi{ background: var(--didi);}
+  .cal-cell.heat-5 .d-pf .pd.gaode{ background: rgba(46,139,126,.9);}
+  .cal-cell.heat-5 .d-pf .pd.didi{ background: rgba(217,104,42,.9);}
+
+  /* day detail panel */
+  .cal-day-detail{
+    background: var(--ink-3); border:1px solid var(--line-strong);
+    border-radius: var(--r-lg); padding: 18px 18px;
+    box-shadow: var(--shadow);
+    animation: fade .3s var(--ease);
+  }
+  .cal-day-detail.empty{ display:none; }
+  .cal-dd-head{
+    display:flex; align-items:baseline; justify-content:space-between;
+    padding-bottom: 12px; margin-bottom: 12px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .cal-dd-head .lbl{ font-family:'Fraunces',serif; font-size:18px; font-weight:500;}
+  .cal-dd-head .lbl .wk{ font-size:12px; color: var(--muted); margin-left:8px; font-family:'Manrope'; font-weight:500;}
+  .cal-dd-head .sum{ font-size:13px; color: var(--paper-dim);}
+  .cal-dd-head .sum b{ color: var(--gold-soft); font-weight:700; font-family:'Manrope', system-ui, sans-serif; font-size:16px;}
+  .cal-dd-list{ display:flex; flex-direction:column; gap:10px; }
+
+  .cal-empty-hint{
+    text-align:center; padding: 24px 10px; color: var(--muted-2); font-size:13px;
+  }
+  .cal-empty-hint .add{
+    margin-top: 10px; cursor:pointer; color: var(--gold);
+    background: rgba(230,168,35,.1); border:1px solid rgba(230,168,35,.3);
+    padding: 7px 16px; border-radius:999px; font-size:12px; font-weight:600;
+    display:inline-block; transition: all .2s var(--ease);
+  }
+  .cal-empty-hint .add:hover{ background: rgba(230,168,35,.18);}
+
+  @media (max-width: 560px){
+    .cal-cell{ padding: 4px 5px; min-height: 46px;}
+    .cal-cell .d-amt{ font-size:11px;}
+    .cal-cell .d-num{ font-size:11px;}
+    .cal-cell .d-pf{ top:4px; right:4px;}
+    .cal-grid, .cal-weekdays{ gap:4px;}
+    .cal-legend .cal-today-btn{ display:none;}
+  }
+
+  /* hidden helper */
+  .hidden{ display:none !important; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Header -->
+  <header class="top">
+    <div class="top-row">
+      <div class="brand">
+        <div class="mark" aria-hidden="true">
+          <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect x="0" y="0" width="48" height="48" rx="10" fill="#FBF9F3"/>
+            <circle cx="24" cy="22" r="13" fill="#E6A823"/>
+            <circle cx="24" cy="22" r="13" fill="none" stroke="#B07A0E" stroke-width="1.4"/>
+            <circle cx="24" cy="22" r="7.6" fill="none" stroke="#2A231E" stroke-width="1.4" stroke-linecap="round"/>
+            <path d="M16.4,19.8 a7.6,7.6 0 0,1 15.2,0" fill="none" stroke="#2A231E" stroke-width="1.4" stroke-linecap="round"/>
+            <path d="M27.2,14 L30.6,18.2 L27.4,19.4" fill="none" stroke="#2A231E" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M15,38 L33,38" fill="none" stroke="#A8760A" stroke-width="1.8" stroke-linecap="round"/>
+            <path d="M18,41.5 L30,41.5" fill="none" stroke="#9B8E7E" stroke-width="1.4" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="serif">顺风·账本</h1>
+        </div>
+      </div>
+      <div class="top-right">
+        <div class="date-pill" id="todayPill">
+          <span class="dot"></span>
+          <span id="todayText">—</span>
+        </div>
+        <button class="icon-btn" id="btnShare" aria-label="分享截图" title="分享">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        </button>
+        <button class="icon-btn" id="btnSettings" aria-label="设置" title="设置">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-main">
+      <div class="hero-label">
+        <span id="heroLabel">今日收入</span>
+        <span class="seg" id="heroSeg">Today</span>
+      </div>
+      <div class="hero-amount tnum" id="heroAmount">
+        <span class="cur">¥</span><span class="int">0</span><span class="dec">.00</span>
+      </div>
+      <div class="hero-meta" id="heroMeta">
+        <div class="item">订单 <b id="heroCount">0</b> 单</div>
+        <div class="item">客单价 <b id="heroAvg">¥0</b></div>
+        <div class="item" id="heroDeltaWrap"><span class="delta flat" id="heroDelta">—</span></div>
+      </div>
+    </div>
+    <div class="hero-side">
+      <div class="stat-card" id="cardWeek">
+        <div class="k">本周累计</div>
+        <div class="v tnum"><span class="cur">¥</span><span id="weekTotal">0</span></div>
+        <div class="hint" id="weekHint">— 单 · — 天</div>
+      </div>
+      <div class="stat-card" id="cardMonth">
+        <div class="k">本月累计</div>
+        <div class="v tnum"><span class="cur">¥</span><span id="monthTotal">0</span></div>
+        <div class="hint" id="monthHint">— 单 · — 天</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tabs -->
+  <nav class="tabs" role="tablist">
+    <button class="tab active" data-tab="records" role="tab">
+      <span>流水</span>
+      <span class="count" id="tabCountRecords">0</span>
+    </button>
+    <button class="tab" data-tab="calendar" role="tab">
+      <span>日历</span>
+    </button>
+    <button class="tab" data-tab="stats" role="tab">
+      <span>统计</span>
+    </button>
+  </nav>
+
+  <!-- Records View -->
+  <section class="view active" id="view-records">
+    <div class="sec-head">
+      <h2 class="serif">收入流水</h2>
+      <div class="tools" id="pfFilter">
+        <button class="chip active" data-filter="all">全部</button>
+        <button class="chip" data-filter="gaode">高德</button>
+        <button class="chip" data-filter="didi">滴滴</button>
+      </div>
+    </div>
+    <div id="recordsList"></div>
+  </section>
+
+  <!-- Calendar View -->
+  <section class="view" id="view-calendar">
+    <div class="sec-head">
+      <h2 class="serif">日历统计</h2>
+      <div class="tools" id="calPfFilter">
+        <button class="chip active" data-cfilter="all">全部</button>
+        <button class="chip" data-cfilter="gaode">高德</button>
+        <button class="chip" data-cfilter="didi">滴滴</button>
+      </div>
+    </div>
+
+    <div class="cal-panel">
+      <div class="cal-head">
+        <button class="cal-nav" id="calPrev" aria-label="上一月">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div class="cal-title">
+          <div class="ym serif" id="calYM">—</div>
+          <div class="cal-summary" id="calSummary">—</div>
+        </div>
+        <button class="cal-nav" id="calNext" aria-label="下一月">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+
+      <div class="cal-legend">
+        <span>少</span>
+        <span class="cal-heat" data-l="1"></span>
+        <span class="cal-heat" data-l="2"></span>
+        <span class="cal-heat" data-l="3"></span>
+        <span class="cal-heat" data-l="4"></span>
+        <span>多</span>
+        <span class="cal-today-btn" id="calTodayBtn">回到今天</span>
+      </div>
+
+      <div class="cal-weekdays">
+        <span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+    </div>
+
+    <div class="cal-day-detail" id="calDayDetail"></div>
+  </section>
+
+  <!-- Stats View -->
+  <section class="view" id="view-stats">
+    <div class="sec-head">
+      <h2 class="serif">数据洞察</h2>
+      <div class="tools" id="rangeFilter">
+        <button class="chip" data-range="7">近7天</button>
+        <button class="chip active" data-range="30">近30天</button>
+        <button class="chip" data-range="all">全部</button>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-mini">
+        <div class="k">总收入</div>
+        <div class="v tnum"><span class="cur">¥</span><span id="sTotal">0</span><span class="dec">.00</span></div>
+        <div class="sub" id="sTotalSub">— 单</div>
+      </div>
+      <div class="stat-mini">
+        <div class="k">总利润</div>
+        <div class="v tnum"><span class="cur">¥</span><span id="sProfit">0</span><span class="dec">.00</span></div>
+        <div class="sub" id="sProfitSub">里程 × 电耗</div>
+      </div>
+      <div class="stat-mini">
+        <div class="k">总里程</div>
+        <div class="v tnum"><span id="sDistance">0</span><span class="dec">km</span></div>
+        <div class="sub" id="sDistanceSub">累计行驶里程</div>
+      </div>
+      <div class="stat-mini">
+        <div class="k">总单数</div>
+        <div class="v tnum"><span id="sOrders">0</span></div>
+        <div class="sub" id="sOrdersSub">日均 — 单</div>
+      </div>
+      <div class="stat-mini">
+        <div class="k">总天数</div>
+        <div class="v tnum"><span id="sDays">0</span></div>
+        <div class="sub" id="sDaysSub">有记录天数</div>
+      </div>
+      <div class="stat-mini">
+        <div class="k">客单价</div>
+        <div class="v tnum"><span class="cur">¥</span><span id="sAvg">0</span></div>
+        <div class="sub">每单平均</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h3 class="serif">收入趋势<span class="badge" id="trendBadge">每日</span></h3>
+        <div class="legend" id="trendLegend"></div>
+      </div>
+      <div class="chart-wrap" id="trendChart"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h3 class="serif">平台占比</h3>
+        <div class="legend" id="pfLegend"></div>
+      </div>
+      <div class="chart-wrap" id="donutChart"></div>
+      <div class="pf-breakdown" id="pfBreakdown"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h3 class="serif">时间段分布<span class="badge" id="hourBadge">接单时段</span></h3>
+      </div>
+      <div class="chart-wrap" id="hourChart"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h3 class="serif">金额分布<span class="badge" id="amtBadge">区间统计</span></h3>
+      </div>
+      <div class="chart-wrap" id="amtChart"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h3 class="serif">类型占比<span class="badge" id="typeBadge">独享/拼座</span></h3>
+      </div>
+      <div class="chart-wrap" id="typeChart"></div>
+      <div class="pf-breakdown" id="typeBreakdown"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h3 class="serif">里程分布<span class="badge" id="distBadge">公里统计</span></h3>
+      </div>
+      <div class="chart-wrap" id="distChart"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h3 class="serif">耗时分布<span class="badge" id="durBadge">分钟统计</span></h3>
+      </div>
+      <div class="chart-wrap" id="durChart"></div>
+    </div>
+  </section>
+
+</div>
+
+<!-- FAB -->
+<button class="fab" id="fabAdd" aria-label="记一笔">
+  <span class="plus">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  </span>
+  <span>记一笔</span>
+</button>
+<button class="fab-scan" id="fabScan" aria-label="识别图片">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="6" y="6" width="12" height="12" rx="2"/><circle cx="12" cy="12" r="2.6"/></svg>
+</button>
+<input type="file" id="scanFile" accept="image/*" capture="environment" hidden />
+
+<!-- Modal -->
+<div class="overlay" id="overlay">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-head">
+      <h3 class="serif" id="modalTitle">记一笔</h3>
+      <button class="close" id="modalClose" aria-label="关闭">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
+      </button>
+    </div>
+
+    <!-- OCR 识别 / 预览 面板（默认隐藏） -->
+    <div id="ocrPanel" class="hidden">
+      <div class="ocr-wrap" id="ocrProgress">
+        <div class="ocr-steps">
+          <div class="ocr-step done" id="ocrStep1"><span class="tag">1</span>读取图片</div>
+          <div class="ocr-step" id="ocrStep2"><span class="tag">2</span>加载识别引擎（首次约 10-30s）</div>
+          <div class="ocr-step" id="ocrStep3"><span class="tag">3</span>识别图中文字</div>
+          <div class="ocr-step" id="ocrStep4"><span class="tag">4</span>解析订单信息</div>
+        </div>
+        <div class="ocr-bar"><div class="fill" id="ocrFill"></div></div>
+        <div class="ocr-tip" id="ocrTip">首次使用需要下载中文识别模型，请耐心等待…</div>
+        <div class="hidden" id="ocrNoConfig" style="text-align:center; padding:6px 0 2px;">
+          <div style="font-size:12.5px; color:var(--gold); margin-bottom:10px;">尚未配置大模型 API，无法识别图片</div>
+          <button type="button" class="btn primary" id="ocrGoSettings" style="width:100%;">⚙️ 去设置大模型 API</button>
+        </div>
+      </div>
+
+      <div class="ocr-wrap hidden" id="ocrReview">
+        <div class="ocr-result">
+          <div class="title">
+            <span>识别结果 · 请核对后填入</span>
+            <span class="plat" id="ocrPlatform">—</span>
+          </div>
+          <div class="row"><div class="k">日期</div><div class="v" id="ocrDate">—</div></div>
+          <div class="row"><div class="k">时间</div><div class="v" id="ocrTime">—</div></div>
+          <div class="row"><div class="k">总车费</div><div class="v amt" id="ocrAmount">—</div></div>
+          <div class="row"><div class="k">其中奖励</div><div class="v" id="ocrBonus">—</div></div>
+          <div class="row"><div class="k">起点</div><div class="v" id="ocrPickup">—</div></div>
+          <div class="row"><div class="k">终点</div><div class="v" id="ocrDropoff">—</div></div>
+          <div class="row"><div class="k">人数</div><div class="v" id="ocrSeats">—</div></div>
+          <div class="row"><div class="k">类型</div><div class="v" id="ocrRideType">—</div></div>
+          <div class="row"><div class="k">里程</div><div class="v" id="ocrDistance">—</div></div>
+          <div class="row"><div class="k">耗时</div><div class="v" id="ocrDuration">—</div></div>
+          <div id="ocrDistanceCandidates" class="ocr-cands hidden"></div>
+
+          <div class="ocr-review">
+            <button type="button" class="btn" id="ocrCancel">取消</button>
+            <button type="button" class="btn primary" id="ocrConfirm">确认添加</button>
+          </div>
+        </div>
+        <button type="button" class="ocr-raw-toggle" id="ocrRawToggle">▼ 查看识别原文</button>
+        <div class="ocr-raw" id="ocrRaw"></div>
+      </div>
+    </div>
+
+    <form id="recForm" novalidate>
+      <input type="hidden" id="fId" />
+
+      <div class="field">
+        <label>平台 <span class="req">*</span></label>
+        <div class="pf-pick">
+          <button type="button" class="pf-opt sel" data-pf="gaode"><span class="dot"></span>高德顺风车</button>
+          <button type="button" class="pf-opt" data-pf="didi"><span class="dot"></span>滴滴顺风车</button>
+        </div>
+        <input type="hidden" id="fPlatform" value="gaode" />
+      </div>
+
+      <div class="row2">
+        <div class="field">
+          <label>日期 <span class="req">*</span></label>
+          <input type="date" class="input" id="fDate" required />
+        </div>
+        <div class="field">
+          <label>时间</label>
+          <input type="time" class="input" id="fTime" />
+        </div>
+      </div>
+
+      <div class="row2">
+        <div class="field">
+          <label>行程总车费(元) <span class="req">*</span></label>
+          <input type="number" class="input" id="fAmount" step="0.01" min="0" inputmode="decimal" placeholder="0.00（包含奖励在内，到手全部收入）" required />
+        </div>
+        <div class="field">
+          <label>里程(公里)</label>
+          <input type="number" class="input" id="fDistance" step="0.1" min="0" inputmode="decimal" placeholder="0.0" />
+        </div>
+      </div>
+
+      <div class="row2">
+        <div class="field">
+          <label>其中奖励(元)</label>
+          <input type="number" class="input" id="fBonus" step="0.01" min="0" inputmode="decimal" placeholder="总车费中含有的平台奖励，非叠加" />
+        </div>
+        <div class="field">
+          <label>时长(分钟)</label>
+          <input type="number" class="input" id="fDuration" step="1" min="0" inputmode="numeric" placeholder="0" />
+        </div>
+      </div>
+
+      <div class="row2">
+        <div class="field">
+          <label>人数</label>
+          <input type="number" class="input" id="fSeats" min="1" step="1" inputmode="numeric" placeholder="1" />
+        </div>
+        <div class="field">
+          <label>类型</label>
+          <select class="input select" id="fRideType">
+            <option value="">请选择</option>
+            <option value="独享">独享</option>
+            <option value="拼座">拼座</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>起点</label>
+        <input type="text" class="input" id="fPickup" placeholder="从哪里出发" />
+      </div>
+      <div class="field">
+        <label>终点</label>
+        <input type="text" class="input" id="fDropoff" placeholder="到哪里" />
+      </div>
+
+      <div class="field">
+        <label>备注</label>
+        <textarea class="textarea" id="fNote" placeholder="如：堵车、夜单、长途..."></textarea>
+      </div>
+
+      <div id="confirmDelete" class="confirm hidden">
+        <p>确定要删除这笔记录吗？此操作不可撤销。</p>
+        <div class="row">
+          <button type="button" class="btn" id="cancelDel">取消</button>
+          <button type="button" class="btn danger" id="confirmDel">确认删除</button>
+        </div>
+      </div>
+
+      <div class="modal-foot">
+        <button type="button" class="btn danger hidden" id="btnDelete">删除</button>
+        <button type="button" class="btn" id="btnCancel">取消</button>
+        <button type="submit" class="btn primary" id="btnSave">保存</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="overlay" id="settingsOverlay">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-head">
+      <h3 class="serif">设置</h3>
+      <button class="close" id="settingsClose" aria-label="关闭">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
+      </button>
+    </div>
+
+    <p class="settings-desc">账本设置：每公里电耗配置、数据同步与大模型识别引擎。</p>
+
+    <div class="settings-actions">
+      <button type="button" class="btn primary" id="btnExport">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        导出数据到文件
+      </button>
+      <button type="button" class="btn" id="btnImport">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        从文件导入数据
+      </button>
+      <button type="button" class="btn" id="btnImportWechat" style="background:rgba(7,193,96,.1); border-color:rgba(7,193,96,.4); color:#07C160;">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8.69 4C4.6 4 1.3 6.94 1.3 10.56c0 2.06 1.1 3.9 2.82 5.1-.14.5-.5 1.78-.57 2.05-.09.33.12.33.25.24.1-.07 1.62-1.1 2.27-1.55.55.12 1.13.19 1.71.21.08 0 .15 0 .23-.01-.05-.27-.08-.55-.08-.83 0-3.13 2.96-5.67 6.62-5.67.18 0 .35.01.53.02C14.4 6.18 11.8 4 8.69 4zm-2.5 3.1a.97.97 0 1 1 0 1.94.97.97 0 0 1 0-1.94zm5.04 0a.97.97 0 1 1 0 1.94.97.97 0 0 1 0-1.94zm4.08 3.6c-3.2 0-5.8 2.33-5.8 5.2 0 2.88 2.6 5.2 5.8 5.2.5 0 .98-.06 1.45-.17.55.37 1.83 1.24 1.92 1.3.11.08.29.08.2-.2-.06-.22-.36-1.27-.47-1.66 1.43-1 2.35-2.5 2.35-4.17 0-2.87-2.6-5.2-5.8-5.2zm-2.04 1.95a.8.8 0 1 1 0 1.6.8.8 0 0 1 0-1.6zm4.1 0a.8.8 0 1 1 0 1.6.8.8 0 0 1 0-1.6z"/></svg>
+        从微信导入
+      </button>
+      <input type="file" id="fileImport" accept=".json,application/json" hidden />
+    </div>
+
+    <div class="settings-hint">
+      <b>使用步骤</b><br/>
+      电脑：打开本页面填写订单 → 点「导出数据到文件」得到 json 文件。<br/>
+      手机：把 json 文件传到手机 → 打开本 App → 点右上角设置 → 「从文件导入数据」选择该文件。<br/>
+      <b>从微信导入</b>：好友把 json 发到微信 → 点「从微信导入」打开微信 → 在聊天中长按 json 文件 →「其他应用打开」→ 选择「顺风账本」即可。导入按记录合并，不会清空已有数据。
+    </div>
+
+    <!-- 每公里电耗配置 -->
+    <div class="llm-block" style="margin-top:18px;">
+      <div class="llm-head">
+        <h4 class="llm-title">⚡ 每公里电耗配置</h4>
+      </div>
+      <p class="llm-desc">利润 = 总收入 − 总里程 × 每公里电耗。用于统计栏目中的利润计算，扣除电费、损耗等成本后的实际收益。</p>
+      <div class="llm-field">
+        <label for="powerCostInput">每公里电耗（元/km，默认 0.15）</label>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <input class="input" type="number" id="powerCostInput" min="0" step="0.01" style="flex:1;"/>
+          <span style="font-size:16px; font-weight:700; color:var(--gold-deep);">元/km</span>
+          <button type="button" class="btn primary" id="btnSavePowerCost" style="flex:0 0 auto; padding:10px 16px;">保存</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 大模型设置：识图 + 识路（默认展开显示） -->
+    <div style="margin-top:22px; border-top:1px solid var(--line); padding-top:16px;">
+        <!-- 识图大模型：视觉模型，识别截图订单信息 -->
+        <div class="llm-block">
+          <div class="llm-head">
+            <h4 class="llm-title">🤖 识图大模型 <span class="tag">推荐</span></h4>
+          </div>
+          <p class="llm-desc">识别截图中的订单信息：时间、起始点、人数、拼座类型、车费、奖励车费</p>
+
+          <div class="llm-field" style="margin-bottom:14px;">
+            <label for="ocrPreset">预设模型</label>
+            <select class="input select" id="ocrPreset">
+              <option value="">（选择常用模型一键填入配置）</option>
+              <option value="doubao-pro-vision">豆包视觉 · doubao-pro-32k-vision（火山引擎）</option>
+              <option value="doubao-flash-vision">豆包轻量 · doubao-1.5-pro-256k-vision（免费）</option>
+              <option value="qwen-vl-plus">通义千问视觉 · qwen-vl-plus（阿里云百炼）</option>
+              <option value="qwen2.5-vl-72b-instruct">Qwen2.5-VL-72B（硅基流动 / OpenRouter 兼容）</option>
+              <option value="glm-4.5v">智谱 GLM-4.5V（推理视觉模型，推荐）</option>
+              <option value="glm-4.6v">智谱 GLM-4.6V（推理视觉模型，已预填 Key）</option>
+              <option value="glm-4v-plus">智谱 GLM-4V-Plus（视觉模型）</option>
+              <option value="glm-4v-flash">智谱 GLM-4V-Flash（免费视觉模型）</option>
+              <option value="gpt-4o-mini">GPT-4o-mini（OpenAI 兼容）</option>
+              <option value="custom">自定义模型（按 OpenAI 兼容格式）</option>
+            </select>
+          </div>
+
+          <div class="llm-field">
+            <label for="ocrKey">API Key</label>
+            <input class="input" type="text" id="ocrKey" placeholder="以 sk- 开头的密钥"/>
+          </div>
+
+          <div class="llm-field">
+            <label for="ocrEndpoint">API 地址（/chat/completions 的根）</label>
+            <input class="input" type="text" id="ocrEndpoint" placeholder="如 https://ark.cn-beijing.volces.com/api/v3"/>
+          </div>
+
+          <div class="llm-field">
+            <label for="ocrModel">模型名称（Model）</label>
+            <input class="input" type="text" id="ocrModel" placeholder="如 doubao-pro-32k-vision"/>
+          </div>
+
+          <div class="llm-field">
+            <label for="ocrPrompt">自定义提示词</label>
+            <textarea class="input textarea" id="ocrPrompt" rows="6" placeholder="提示词已预填内置识图提示词，可按需修改。"></textarea>
+          </div>
+
+          <div class="llm-actions">
+            <button type="button" class="btn" id="ocrTestConn">🔌 连接测试</button>
+          </div>
+          <div class="llm-test" id="ocrTestResult"></div>
+        </div>
+
+        <!-- 识路大模型：纯文本模型，根据起点终点估算里程和耗时 -->
+        <div class="llm-block" style="margin-top:14px;">
+          <div class="llm-head">
+            <h4 class="llm-title">🗺️ 识路大模型 <span class="tag">可选</span></h4>
+          </div>
+          <p class="llm-desc">根据起点终点和时间，计算驾车里程和耗时（含高峰期耗时）。未配置时里程/耗时需手动填写。</p>
+
+          <div class="llm-field" style="margin-bottom:14px;">
+            <label for="routePreset">预设模型</label>
+            <select class="input select" id="routePreset">
+              <option value="">请选择</option>
+              <option value="glm-4-flash">智谱 GLM-4-Flash（免费纯文本模型）</option>
+              <option value="glm-4-air">智谱 GLM-4-Air</option>
+              <option value="qwen-turbo">通义千问 qwen-turbo（阿里云百炼）</option>
+              <option value="deepseek-chat">DeepSeek deepseek-chat</option>
+              <option value="deepseek-v4-flash">DeepSeek deepseek-v4-flash（已预填 Key）</option>
+              <option value="doubao-pro-32k">豆包 doubao-pro-32k（火山引擎）</option>
+              <option value="custom">自定义模型</option>
+            </select>
+          </div>
+
+          <div class="llm-field">
+            <label for="routeKey">API Key</label>
+            <input class="input" type="text" id="routeKey" placeholder="以 sk- 开头的密钥（与识图模型可相同）"/>
+          </div>
+
+          <div class="llm-field">
+            <label for="routeEndpoint">API 地址（/chat/completions 的根）</label>
+            <input class="input" type="text" id="routeEndpoint" placeholder="如 https://open.bigmodel.cn/api/paas/v4"/>
+          </div>
+
+          <div class="llm-field">
+            <label for="routeModel">模型名称（Model）</label>
+            <input class="input" type="text" id="routeModel" placeholder="如 glm-4-flash"/>
+          </div>
+
+          <div class="llm-field">
+            <label for="routeRegion">估算区域（限定运营范围，用于起终点→里程）</label>
+            <input class="input" type="text" id="routeRegion" placeholder="默认：河南省郑州市"/>
+          </div>
+
+          <div class="llm-field">
+            <label for="routePrompt">自定义提示词</label>
+            <textarea class="input textarea" id="routePrompt" rows="6" placeholder="提示词已预填内置识路提示词（含 ${region} ${pickup} ${dropoff} ${time} 占位符），可按需修改。"></textarea>
+          </div>
+
+          <div class="llm-actions">
+            <button type="button" class="btn" id="routeTestConn">🔌 连接测试</button>
+          </div>
+          <div class="llm-test" id="routeTestResult"></div>
+        </div>
+
+        <!-- 统一保存/清空：同时保存识图 + 识路配置 -->
+        <div class="llm-block" style="margin-top:14px;">
+          <div class="llm-actions" style="margin-top:0; padding-top:0; border-top:0;">
+            <button type="button" class="btn" id="ocrBaiduClear">清空全部</button>
+            <button type="button" class="btn primary" id="ocrBaiduSave">保存设置</button>
+          </div>
+        </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script>
+/* ============================================================
+   顺风·账本 — 顺风车记账应用
+   数据持久化: localStorage
+   ============================================================ */
+
+const APP_VERSION = '1.4.5';          // 与 build.gradle.kts 中 versionName 同步
+const STORE_KEY = 'shunfeng_ledger_v2';
+
+const PF_META = {
+  gaode: { name:'高德', short:'高', color:'#2E8B7E', label:'高德顺风车' },
+  didi:  { name:'滴滴', short:'滴', color:'#D9682A', label:'滴滴顺风车' },
+};
+
+const WEEKDAYS = ['周日','周一','周二','周三','周四','周五','周六'];
+
+/* ---------- Storage ---------- */
+let DB = loadDB();
+
+function loadDB(){
+  try{
+    const raw = localStorage.getItem(STORE_KEY);
+    if(raw){ return JSON.parse(raw); }
+  }catch(e){}
+  return [];
+}
+function saveDB(){
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify(DB)); }catch(e){}
+  // 同步订单数据到原生层，供桌面小组件读取（Android JSInterface）
+  try{
+    if(window.Android && window.Android.syncOrders){
+      window.Android.syncOrders(JSON.stringify(DB));
+    }
+  }catch(e){}
+}
+
+/* ---------- Utils ---------- */
+const $ = (s, el=document)=> el.querySelector(s);
+const $$ = (s, el=document)=> [...el.querySelectorAll(s)];
+const uid = ()=> Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+const pad = n => String(n).padStart(2,'0');
+const fmtDate = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const parseDate = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); };
+const money = n => {
+  const v = Math.round((Number(n)||0)*100)/100;
+  return v.toLocaleString('zh-CN', {minimumFractionDigits:2, maximumFractionDigits:2});
+};
+const moneyParts = n => {
+  const v = Math.round((Number(n)||0)*100)/100;
+  const [int, dec] = money(v).split('.');
+  return { int, dec };
+};
+const num = n => (Number(n)||0).toLocaleString('zh-CN');
+// 单笔订单总收入 = 行程总车费（amount 已经包含奖励 bonus，不再重复叠加）
+const orderIncome = r => (Number(r.amount)||0);
+
+/* 沉浸式状态栏：由 Android 原生注入实际状态栏/导航栏高度（CSS px）。
+   在浏览器中直接打开时此函数不被调用，--sat/--sab 走 env() 兜底（桌面端为 0）。 */
+window.__applyInsets = function(top, bottom){
+  const s = document.documentElement.style;
+  s.setProperty('--sat', (top|0) + 'px');
+  s.setProperty('--sab', (bottom|0) + 'px');
+};
+
+function startOfWeek(d){
+  const r = new Date(d); r.setHours(0,0,0,0);
+  const day = r.getDay(); // 0 Sun
+  const diff = (day === 0 ? -6 : 1) - day; // Monday start
+  r.setDate(r.getDate() + diff);
+  return r;
+}
+function startOfMonth(d){ const r = new Date(d.getFullYear(), d.getMonth(), 1); return r; }
+function daysBetween(a,b){ return Math.round((b - a) / 86400000); }
+
+/* ---------- Toast ---------- */
+const toastWrap = $('#toastWrap');
+function toast(msg, type='ok'){
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  const ico = type==='ok'
+    ? '<span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>'
+    : '<span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span>';
+  el.innerHTML = ico + `<span>${msg}</span>`;
+  toastWrap.appendChild(el);
+  setTimeout(()=>{ el.classList.add('out'); setTimeout(()=>el.remove(), 300); }, 2200);
+}
+
+/* ---------- Today pill ---------- */
+function renderToday(){
+  const now = new Date();
+  const txt = `${now.getMonth()+1}月${now.getDate()}日 · ${WEEKDAYS[now.getDay()]}`;
+  $('#todayText').textContent = txt;
+}
+
+/* ---------- Hero ---------- */
+function renderHero(){
+  const today = fmtDate(new Date());
+  const todays = DB.filter(r => r.date === today);
+  const sum = todays.reduce((a,r)=>a + orderIncome(r), 0);
+  const { int, dec } = moneyParts(sum);
+  $('#heroAmount').innerHTML = `<span class="cur">¥</span><span class="int">${int}</span><span class="dec">.${dec}</span>`;
+  $('#heroCount').textContent = todays.length;
+  $('#heroAvg').textContent = '¥' + (todays.length ? (sum/todays.length).toFixed(0) : 0);
+
+  // delta vs yesterday
+  const y = new Date(); y.setDate(y.getDate()-1);
+  const yd = fmtDate(y);
+  const ySum = DB.filter(r=>r.date===yd).reduce((a,r)=>a+orderIncome(r),0);
+  const delta = sum - ySum;
+  const wrap = $('#heroDelta');
+  const wrap2 = $('#heroDeltaWrap');
+  if(ySum === 0 && sum === 0){ wrap.className='delta flat'; wrap.textContent='暂无对比'; }
+  else if(delta > 0){ wrap.className='delta up'; wrap.textContent = `↑ ¥${money(delta).replace('.00','')}`; }
+  else if(delta < 0){ wrap.className='delta down'; wrap.textContent = `↓ ¥${money(-delta).replace('.00','')}`; }
+  else { wrap.className='delta flat'; wrap.textContent='持平'; }
+
+  // week
+  const ws = startOfWeek(new Date());
+  const week = DB.filter(r => parseDate(r.date) >= ws);
+  const wSum = week.reduce((a,r)=>a+orderIncome(r),0);
+  const wDays = new Set(week.map(r=>r.date)).size;
+  $('#weekTotal').textContent = num(Math.round(wSum));
+  $('#weekHint').textContent = `${week.length} 单 · ${wDays} 天`;
+
+  // month
+  const ms = startOfMonth(new Date());
+  const month = DB.filter(r => parseDate(r.date) >= ms);
+  const mSum = month.reduce((a,r)=>a+orderIncome(r),0);
+  const mDays = new Set(month.map(r=>r.date)).size;
+  $('#monthTotal').textContent = num(Math.round(mSum));
+  $('#monthHint').textContent = `${month.length} 单 · ${mDays} 天`;
+}
+
+/* ---------- Records list ---------- */
+let pfFilter = 'all';
+function renderRecords(){
+  const list = $('#recordsList');
+  const tabCount = $('#tabCountRecords');
+  tabCount.textContent = DB.length;
+
+  let items = DB.slice().sort((a,b)=>{
+    if(a.date !== b.date) return a.date < b.date ? 1 : -1;
+    if((a.time||'') !== (b.time||'')) return (a.time||'') < (b.time||'') ? 1 : -1;
+    return (b.createdAt||0) - (a.createdAt||0);
+  });
+  if(pfFilter !== 'all') items = items.filter(r => r.platform === pfFilter);
+
+  if(items.length === 0){
+    list.innerHTML = emptyRecords();
+    return;
+  }
+
+  // group by date
+  const groups = {};
+  items.forEach(r => { (groups[r.date] = groups[r.date] || []).push(r); });
+
+  let html = '';
+  Object.keys(groups).sort((a,b)=> a<b?1:-1).forEach(date => {
+    const arr = groups[date];
+    const sum = arr.reduce((a,r)=>a+orderIncome(r),0);
+    const d = parseDate(date);
+    const today = new Date(); today.setHours(0,0,0,0);
+    const diff = daysBetween(d, today);
+    let label;
+    if(diff === 0) label = '今天';
+    else if(diff === 1) label = '昨天';
+    else if(diff === -1) label = '明天';
+    else label = `${d.getMonth()+1}月${d.getDate()}日`;
+    const wk = WEEKDAYS[d.getDay()];
+
+    html += `<div class="day-group">
+      <div class="day-head">
+        <div class="d">${label} <span class="wk">${wk}</span></div>
+        <div class="sum">${arr.length} 单 · 合计 <b>¥${money(sum)}</b></div>
+      </div>
+      <div class="rec-list">`;
+    arr.forEach(r => { html += recordCard(r); });
+    html += `</div></div>`;
+  });
+  list.innerHTML = html;
+
+  // bind actions
+  $$('.rec', list).forEach(card => {
+    const id = card.dataset.id;
+    $('.btn-edit', card)?.addEventListener('click', ()=> openModal(id));
+    $('.btn-del', card)?.addEventListener('click', ()=> openModal(id, true));
+  });
+}
+
+function recordCard(r){
+  const pf = PF_META[r.platform] || PF_META.gaode;
+  const amt = moneyParts(orderIncome(r));
+  const meta = [];
+  if(r.time) meta.push(`<span class="m"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg>${r.time}</span>`);
+  if(r.distance) meta.push(`<span class="m"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12h4l2-5h6l2 5h4"/><circle cx="7" cy="14" r="1.6"/><circle cx="17" cy="14" r="1.6"/></svg>${r.distance}km</span>`);
+  if(r.duration) meta.push(`<span class="m"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 7v5l3 2"/><circle cx="12" cy="12" r="9"/></svg>${r.duration}min</span>`);
+  if(r.seats) meta.push(`<span class="m"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.5 3.1-5.5 7-5.5s7 2 7 5.5"/></svg>${r.seats}人</span>`);
+  if(r.rideType) meta.push(`<span class="m">${r.rideType}</span>`);
+  if(r.bonus > 0) meta.push(`<span class="m m-bonus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 4.9 5.1 1-3.7 3.6.9 5.1-4.7-2.5-4.7 2.5.9-5.1L4.5 7.9l5.1-1z"/></svg>奖励 ¥${r.bonus}</span>`);
+  if(r.note) meta.push(`<span class="m note">${escapeHtml(r.note)}</span>`);
+
+  const route = (r.pickup || r.dropoff)
+    ? `<div class="route"><span class="from">${escapeHtml(r.pickup||'起点')}</span><span class="arrow">→</span><span class="to">${escapeHtml(r.dropoff||'终点')}</span></div>`
+    : `<div class="route"><span class="from">${pf.label}</span></div>`;
+
+  const per = r.distance ? `<div class="per">¥${(orderIncome(r)/r.distance).toFixed(2)}/km</div>` : '';
+
+  return `
+  <div class="rec ${r.platform}" data-id="${r.id}">
+    <div class="pf">${pf.short}</div>
+    <div class="info">
+      ${route}
+      <div class="meta">${meta.join('')}</div>
+    </div>
+    <div class="amt">
+      <div class="n tnum"><span class="cur">¥</span>${amt.int}<span class="dec">.${amt.dec}</span></div>
+      ${per}
+    </div>
+    <div class="acts">
+      <button class="icon-btn btn-edit" aria-label="编辑"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></button>
+      <button class="icon-btn danger btn-del" aria-label="删除"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg></button>
+    </div>
+  </div>`;
+}
+
+function emptyRecords(){
+  if(DB.length === 0){
+    return `<div class="empty">
+      <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18M5 7v13a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V7M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3M9 12h6M9 16h6"/></svg></div>
+      <h3 class="serif">还没有记录</h3>
+      <p>点击右下角"记一笔"，开始追踪你的顺风车收入。每一单都值得被记录。</p>
+    </div>`;
+  }
+  return `<div class="empty">
+    <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3"/></svg></div>
+    <h3 class="serif">暂无该平台记录</h3>
+    <p>切换"全部"查看所有流水，或记一笔新的订单。</p>
+  </div>`;
+}
+
+function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ---------- Modal ---------- */
+const overlay = $('#overlay');
+const form = $('#recForm');
+let editModeId = null;
+
+function openModal(id=null){
+  editModeId = id;
+  form.reset();
+  $('#confirmDelete').classList.add('hidden');
+  $('#btnDelete').classList.add('hidden');
+  // 重置 OCR 面板状态：确保「记一笔」始终显示表单，而非残留的 OCR 面板
+  ocrPanel.classList.add('hidden');
+  ocrProgress.classList.remove('hidden');
+  ocrReview.classList.add('hidden');
+  ocrRaw.classList.remove('show');
+  ocrRawToggle.textContent = '▼ 查看识别原文';
+  $('#ocrNoConfig').classList.add('hidden');
+  ocrParsed = null;
+  $('#recForm').classList.remove('hidden');
+
+  if(id){
+    const r = DB.find(x=>x.id===id);
+    if(!r) return;
+    $('#modalTitle').textContent = '编辑记录';
+    $('#fId').value = r.id;
+    setPlatform(r.platform);
+    $('#fDate').value = r.date;
+    $('#fTime').value = r.time || '';
+    $('#fAmount').value = r.amount;
+    $('#fBonus').value = r.bonus || '';
+    $('#fDistance').value = r.distance || '';
+    $('#fDuration').value = r.duration || '';
+    $('#fSeats').value = r.seats || '';
+    $('#fRideType').value = r.rideType || '';
+    $('#fPickup').value = r.pickup || '';
+    $('#fDropoff').value = r.dropoff || '';
+    $('#fNote').value = r.note || '';
+    $('#btnDelete').classList.remove('hidden');
+  } else {
+    $('#modalTitle').textContent = '记一笔';
+    $('#fId').value = '';
+    setPlatform('gaode');
+    const now = new Date();
+    $('#fDate').value = fmtDate(now);
+    $('#fTime').value = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  }
+  overlay.classList.add('show');
+  setTimeout(()=> $('#fAmount').focus(), 200);
+}
+function closeModal(){
+  overlay.classList.remove('show');
+  editModeId = null;
+}
+
+function setPlatform(pf){
+  $('#fPlatform').value = pf;
+  $$('.pf-opt').forEach(b => b.classList.toggle('sel', b.dataset.pf === pf));
+}
+
+/* ---------- Form submit ---------- */
+function findDuplicate(rec){
+  // 同日期+同时段视为重复（编辑场景下排除自身）
+  return DB.find(x => x.id !== rec.id && x.date === rec.date && (x.time || '') === (rec.time || ''));
+}
+/** 检测重复订单：同一日期+时间段已存在则提示并阻止创建，返回 true。 */
+function blockIfDuplicate(rec){
+  const dup = findDuplicate(rec);
+  if(!dup) return false;
+  const when = `${rec.date}${rec.time ? ' ' + rec.time : ''}`;
+  const dupRoute = [dup.pickup, dup.dropoff].filter(Boolean).join(' → ') || '—';
+  toast(`该订单已创建过，无法再次创建（${when}，已有：${dupRoute}）`, 'err');
+  return true;
+}
+function commitSave(rec){
+  const idx = DB.findIndex(x=>x.id===rec.id);
+  if(idx >= 0){ DB[idx] = { ...DB[idx], ...rec }; toast('已更新'); }
+  else { DB.push(rec); toast('已记录一笔'); }
+  saveDB();
+  closeModal();
+  refresh();
+}
+/* 从表单构建记录对象（提交与 OCR 一次确认共用） */
+function buildRecFromForm(){
+  const id = $('#fId').value || uid();
+  return {
+    id,
+    platform: $('#fPlatform').value,
+    date: $('#fDate').value,
+    time: $('#fTime').value || '',
+    amount: parseFloat($('#fAmount').value),
+    bonus: parseFloat($('#fBonus').value) || 0,
+    distance: parseFloat($('#fDistance').value) || 0,
+    duration: parseInt($('#fDuration').value) || 0,
+    seats: $('#fSeats').value.trim(),
+    rideType: $('#fRideType').value.trim(),
+    pickup: $('#fPickup').value.trim(),
+    dropoff: $('#fDropoff').value.trim(),
+    note: $('#fNote').value.trim(),
+    createdAt: Date.now(),
+  };
+}
+form.addEventListener('submit', e => {
+  e.preventDefault();
+  const rec = buildRecFromForm();
+
+  if(!rec.date){ toast('请选择日期', 'err'); return; }
+  if(!(rec.amount > 0)){ toast('请输入金额', 'err'); $('#fAmount').focus(); return; }
+
+  // 重复订单检测：同一日期+时间段已存在 → 提醒并阻止创建
+  if(blockIfDuplicate(rec)) return;
+  commitSave(rec);
+});
+
+$('#btnCancel').addEventListener('click', closeModal);
+$('#modalClose').addEventListener('click', closeModal);
+overlay.addEventListener('click', e => { if(e.target === overlay) closeModal(); });
+document.addEventListener('keydown', e => { if(e.key === 'Escape' && overlay.classList.contains('show')) closeModal(); });
+
+/* platform picker */
+$$('.pf-opt').forEach(b => b.addEventListener('click', ()=> setPlatform(b.dataset.pf)));
+
+/* delete flow */
+$('#btnDelete').addEventListener('click', ()=> $('#confirmDelete').classList.remove('hidden'));
+$('#cancelDel').addEventListener('click', ()=> $('#confirmDelete').classList.add('hidden'));
+$('#confirmDel').addEventListener('click', ()=>{
+  const id = $('#fId').value;
+  DB = DB.filter(x=>x.id !== id);
+  saveDB();
+  closeModal();
+  toast('已删除记录');
+  refresh();
+});
+
+/* ---------- Tabs ---------- */
+$$('.tab').forEach(t => t.addEventListener('click', ()=>{
+  $$('.tab').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active');
+  const name = t.dataset.tab;
+  $$('.view').forEach(v => v.classList.toggle('active', v.id === `view-${name}`));
+  if(name === 'stats') renderStats();
+  if(name === 'calendar') renderCalendar();
+}));
+
+/* platform filter */
+$('#pfFilter').addEventListener('click', e=>{
+  const b = e.target.closest('.chip'); if(!b) return;
+  $$('#pfFilter .chip').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  pfFilter = b.dataset.filter;
+  renderRecords();
+});
+
+/* range filter */
+let statRange = 30;
+$('#rangeFilter').addEventListener('click', e=>{
+  const b = e.target.closest('.chip'); if(!b) return;
+  $$('#rangeFilter .chip').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  statRange = b.dataset.range === 'all' ? 'all' : parseInt(b.dataset.range);
+  renderStats();
+});
+
+/* FAB */
+$('#fabAdd').addEventListener('click', ()=> openModal());
+
+/* ============================================================
+   STATISTICS & CHARTS
+   ============================================================ */
+
+function getStatRecords(){
+  if(statRange === 'all') return DB.slice();
+  const since = new Date(); since.setHours(0,0,0,0); since.setDate(since.getDate() - (statRange-1));
+  return DB.filter(r => parseDate(r.date) >= since);
+}
+
+function renderStats(){
+  const data = getStatRecords();
+  const total = data.reduce((a,r)=>a+orderIncome(r), 0);
+  const orders = data.length;
+  const days = new Set(data.map(r=>r.date)).size || 1;
+  const avg = orders ? total/orders : 0;
+  const totalDistance = data.reduce((a,r)=>a+(parseFloat(r.distance)||0), 0);
+  const profit = calcProfit(total, totalDistance);
+  const powerCost = loadPowerCost();
+
+  const tP = moneyParts(total);
+  $('#sTotal').textContent = tP.int; $('#sTotal').parentElement.querySelector('.dec').textContent = '.'+tP.dec;
+  $('#sTotalSub').textContent = `${orders} 单`;
+  $('#sOrders').textContent = num(orders);
+  $('#sOrdersSub').textContent = `日均 ${orders ? (orders/days).toFixed(1) : 0} 单`;
+  // 总里程：各订单里程之和
+  $('#sDistance').textContent = num(Math.round(totalDistance));
+  $('#sDistanceSub').textContent = totalDistance ? `共 ${totalDistance.toFixed(1)} km` : '未填写里程';
+  $('#sDays').textContent = num(days);
+  $('#sDaysSub').textContent = orders ? `覆盖 ${days} 天` : '暂无记录';
+  $('#sAvg').textContent = num(Math.round(avg));
+  const pP = moneyParts(profit);
+  $('#sProfit').textContent = pP.int; $('#sProfit').parentElement.querySelector('.dec').textContent = '.'+pP.dec;
+  // 小字显示利润率 = 总利润 / 总收入（百分比）
+  const profitRate = total > 0 ? (profit / total) * 100 : 0;
+  $('#sProfitSub').textContent = `利润率 ${profitRate.toFixed(1)}%`;
+
+  drawTrend(data);
+  drawDonut(data);
+  drawTypeDist(data);
+  drawHourDist(data);
+  drawAmtDist(data);
+  drawDistDist(data);
+  drawDurDist(data);
+}
+
+/* ---------- Trend line chart ---------- */
+function drawTrend(data){
+  const wrap = $('#trendChart');
+  const badge = $('#trendBadge');
+  const legend = $('#trendLegend');
+
+  // build daily series
+  let days;
+  if(statRange === 'all'){
+    if(data.length === 0){ wrap.innerHTML = emptyChart('暂无数据'); badge.textContent='每日'; legend.innerHTML=''; return; }
+    const dates = data.map(r=>r.date).sort();
+    const start = parseDate(dates[0]), end = parseDate(dates[dates.length-1]);
+    days = Math.max(1, daysBetween(start, end) + 1);
+    // limit to last 60 days for readability
+    if(days > 60){ const s = new Date(end); s.setDate(s.getDate()-59); start.setTime(s.getTime()); days = 60; }
+    var seriesStart = start;
+  } else {
+    days = statRange;
+    var seriesStart = (()=>{ const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()-(days-1)); return d; })();
+  }
+  badge.textContent = `近 ${days} 天`;
+
+  // build per-platform daily sums
+  const labels = [];
+  const gaodeSeries = [];
+  const didiSeries = [];
+  const totalSeries = [];
+  for(let i=0;i<days;i++){
+    const d = new Date(seriesStart); d.setDate(d.getDate()+i);
+    const key = fmtDate(d);
+    labels.push(key);
+    let g=0, dd=0;
+    data.forEach(r => { if(r.date===key){ if(r.platform==='gaode') g+=orderIncome(r); else dd+=orderIncome(r);} });
+    gaodeSeries.push(g);
+    didiSeries.push(dd);
+    totalSeries.push(g+dd);
+  }
+
+  const W = 720, H = 220, padL=44, padR=14, padT=18, padB=28;
+  const innerW = W - padL - padR;
+  const innerH = H - padT - padB;
+  const maxV = Math.max(1, ...totalSeries);
+  const niceMax = niceCeil(maxV);
+
+  const xAt = i => padL + (days<=1 ? innerW/2 : (i/(days-1))*innerW);
+  const yAt = v => padT + innerH - (v/niceMax)*innerH;
+
+  // gridlines (4)
+  let grid = '';
+  const steps = 4;
+  for(let s=0;s<=steps;s++){
+    const v = (niceMax/steps)*s;
+    const y = yAt(v);
+    grid += `<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="rgba(42,35,30,0.06)" stroke-width="1"/>`;
+    grid += `<text x="${padL-8}" y="${y+4}" text-anchor="end" font-size="10" fill="#6E6357" font-family="JetBrains Mono">${v>=1000? (v/1000).toFixed(1)+'k' : Math.round(v)}</text>`;
+  }
+
+  // area + line for total
+  const totalPath = totalSeries.map((v,i)=> `${i===0?'M':'L'} ${xAt(i).toFixed(1)} ${yAt(v).toFixed(1)}`).join(' ');
+  const areaPath = totalPath + ` L ${xAt(days-1).toFixed(1)} ${yAt(0)} L ${xAt(0).toFixed(1)} ${yAt(0)} Z`;
+
+  // stacked bars for platforms (subtle), actually let's draw two thin lines for platforms + thicker total
+  const gaodePath = linePath(gaodeSeries, xAt, yAt);
+  const didiPath = linePath(didiSeries, xAt, yAt);
+
+  // x labels (sparse)
+  let xLabels = '';
+  const labelStep = Math.max(1, Math.ceil(days/7));
+  for(let i=0;i<days;i+=labelStep){
+    const d = parseDate(labels[i]);
+    const txt = `${d.getMonth()+1}/${d.getDate()}`;
+    xLabels += `<text x="${xAt(i)}" y="${H-8}" text-anchor="middle" font-size="10" fill="#6E6357" font-family="JetBrains Mono">${txt}</text>`;
+  }
+
+  // dots on total
+  let dots = '';
+  totalSeries.forEach((v,i)=>{
+    dots += `<circle cx="${xAt(i).toFixed(1)}" cy="${yAt(v).toFixed(1)}" r="2.5" fill="#2A231E" stroke="#E6A823" stroke-width="1.5"/>`;
+  });
+
+  // highlight peak
+  let peak = '';
+  let peakIdx = totalSeries.indexOf(Math.max(...totalSeries));
+  if(totalSeries[peakIdx] > 0){
+    const px = xAt(peakIdx), py = yAt(totalSeries[peakIdx]);
+    peak = `<g>
+      <line x1="${px}" y1="${padT}" x2="${px}" y2="${py-6}" stroke="rgba(230,168,35,0.3)" stroke-width="1" stroke-dasharray="2 3"/>
+      <circle cx="${px}" cy="${py}" r="4" fill="#E6A823"/>
+      <text x="${px}" y="${py-10}" text-anchor="middle" font-size="11" fill="#A8760A" font-family="Manrope" font-weight="700">¥${Math.round(totalSeries[peakIdx])}</text>
+    </g>`;
+  }
+
+  wrap.innerHTML = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="收入趋势图">
+    <defs>
+      <linearGradient id="areaG" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#E6A823" stop-opacity="0.35"/>
+        <stop offset="100%" stop-color="#E6A823" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+    ${grid}
+    <path d="${areaPath}" fill="url(#areaG)"/>
+    <path d="${gaodePath}" fill="none" stroke="#2E8B7E" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" opacity="0.85"/>
+    <path d="${didiPath}" fill="none" stroke="#D9682A" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" opacity="0.85"/>
+    <path d="${totalPath}" fill="none" stroke="#E6A823" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
+    ${dots}
+    ${peak}
+    ${xLabels}
+  </svg>`;
+
+  legend.innerHTML = `
+    <div class="li"><span class="sw" style="background:#E6A823"></span>合计 <b>¥${money(totalSeries.reduce((a,b)=>a+b,0))}</b></div>
+    <div class="li"><span class="sw" style="background:#2E8B7E"></span>高德</div>
+    <div class="li"><span class="sw" style="background:#D9682A"></span>滴滴</div>`;
+}
+
+function linePath(series, xAt, yAt){
+  return series.map((v,i)=> `${i===0?'M':'L'} ${xAt(i).toFixed(1)} ${yAt(v).toFixed(1)}`).join(' ');
+}
+
+function niceCeil(v){
+  if(v <= 0) return 1;
+  const mag = Math.pow(10, Math.floor(Math.log10(v)));
+  const n = v/mag;
+  let nice;
+  if(n <= 1) nice = 1;
+  else if(n <= 2) nice = 2;
+  else if(n <= 2.5) nice = 2.5;
+  else if(n <= 5) nice = 5;
+  else nice = 10;
+  return nice * mag;
+}
+
+/* ---------- Donut chart ---------- */
+function drawDonut(data){
+  const wrap = $('#donutChart');
+  const legend = $('#pfLegend');
+  const breakdown = $('#pfBreakdown');
+
+  let g=0, d=0;
+  data.forEach(r=>{ if(r.platform==='gaode') g+=orderIncome(r); else d+=orderIncome(r); });
+  const total = g + d;
+
+  if(total === 0){
+    wrap.innerHTML = emptyChart('暂无数据');
+    legend.innerHTML = '';
+    breakdown.innerHTML = `<div style="text-align:center;color:var(--muted-2);padding:10px;font-size:12px;">添加记录后即可查看平台占比</div>`;
+    return;
+  }
+
+  const gp = total ? g/total : 0;
+  const dp = total ? d/total : 0;
+  const gOrders = data.filter(r=>r.platform==='gaode').length;
+  const dOrders = data.filter(r=>r.platform==='didi').length;
+
+  // SVG donut
+  const cx=110, cy=110, R=82, r=54;
+  const circ = 2*Math.PI*R;
+  const gLen = circ * gp;
+  const dLen = circ * dp;
+  const gDash = `${gLen} ${circ - gLen}`;
+  const dDash = `${dLen} ${circ - dLen}`;
+
+  wrap.innerHTML = `<svg viewBox="0 0 220 220" preserveAspectRatio="xMidYMid meet" style="max-width:220px;margin:0 auto;display:block;" role="img" aria-label="平台占比">
+    <defs>
+      <linearGradient id="gG" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#5BBAAB"/><stop offset="100%" stop-color="#2E8B7E"/>
+      </linearGradient>
+      <linearGradient id="dG" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#E8895A"/><stop offset="100%" stop-color="#D9682A"/>
+      </linearGradient>
+    </defs>
+    <circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="rgba(42,35,30,0.05)" stroke-width="${R-r}"/>
+    <circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="url(#gG)" stroke-width="${R-r}"
+      stroke-dasharray="${gDash}" stroke-dashoffset="${circ*0.25}"
+      transform="rotate(-90 ${cx} ${cy})" stroke-linecap="butt"/>
+    <circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="url(#dG)" stroke-width="${R-r}"
+      stroke-dasharray="${dDash}" stroke-dashoffset="${circ*0.25 - gLen}"
+      transform="rotate(-90 ${cx} ${cy})" stroke-linecap="butt"/>
+    <text x="${cx}" y="${cy-6}" text-anchor="middle" font-family="Manrope" font-size="10" fill="#9B8E7E" letter-spacing="1.5">TOTAL</text>
+    <text x="${cx}" y="${cy+18}" text-anchor="middle" font-family="Manrope" font-size="26" fill="#2A231E" font-weight="700">¥${moneyParts(total).int}</text>
+  </svg>`;
+
+  legend.innerHTML = `
+    <div class="li"><span class="sw" style="background:#2E8B7E"></span>高德 <b>${(gp*100).toFixed(0)}%</b></div>
+    <div class="li"><span class="sw" style="background:#D9682A"></span>滴滴 <b>${(dp*100).toFixed(0)}%</b></div>`;
+
+  const maxV = Math.max(g, d);
+  breakdown.innerHTML = `
+    <div class="pf-row">
+      <div class="top">
+        <div class="name"><span class="sw" style="background:#2E8B7E"></span>高德顺风车</div>
+        <div class="vals"><b>¥${money(g)}</b> · ${gOrders}单 · 均¥${gOrders?Math.round(g/gOrders):0}</div>
+      </div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(g/maxV*100)}%;background:linear-gradient(90deg,#5BBAAB,#2E8B7E);"></div></div>
+    </div>
+    <div class="pf-row">
+      <div class="top">
+        <div class="name"><span class="sw" style="background:#D9682A"></span>滴滴顺风车</div>
+        <div class="vals"><b>¥${money(d)}</b> · ${dOrders}单 · 均¥${dOrders?Math.round(d/dOrders):0}</div>
+      </div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(d/maxV*100)}%;background:linear-gradient(90deg,#E8895A,#D9682A);"></div></div>
+    </div>`;
+}
+
+/* ---------- Hour distribution (接单时间段分布) ---------- */
+/* 将一天按 2 小时为一段分为 12 个时段，统计每个时段的订单数与收入，柱状图展示 */
+function drawHourDist(data){
+  const wrap = $('#hourChart');
+  const badge = $('#hourBadge');
+  if(!data.length){ wrap.innerHTML = emptyChart('暂无数据'); badge.textContent='接单时段'; return; }
+
+  // 12 个时段：0-2, 2-4, ..., 22-24
+  const buckets = Array.from({length:12}, (_,i)=>({ hour:i*2, count:0, income:0 }));
+  data.forEach(r=>{
+    let h = 0;
+    if(r.time){
+      const m = /^(\d{1,2}):(\d{2})/.exec(r.time);
+      if(m) h = parseInt(m[1],10);
+    } else {
+      // 无时刻字段时，用 parseDate 小时兜底（多数情况为 0，影响有限）
+      h = parseDate(r.date).getHours();
+    }
+    const idx = Math.min(11, Math.floor(h/2));
+    buckets[idx].count++;
+    buckets[idx].income += orderIncome(r);
+  });
+  const total = buckets.reduce((a,b)=>a+b.count,0);
+  const maxC = Math.max(1, ...buckets.map(b=>b.count));
+  badge.textContent = `${total} 单`;
+
+  const W=720, H=260, padL=44, padR=16, padT=20, padB=52;
+  const innerW = W-padL-padR, innerH = H-padT-padB;
+  const gap = 8, barW = (innerW - gap*(buckets.length-1))/buckets.length;
+
+  // 动态最优网格：在候选步数 [3,4,5] 与候选步长 {1,2,2.5,5,10,20}×mag 中
+  // 挑选满足 step×stepCount≥maxC 且空间利用率最高（留白最少）的方案。
+  // 整数步长优先，确保 Y 轴刻度值整洁。
+  let niceMax = niceCeil(maxC), niceStep = niceMax / 4, stepCount = 4;
+  let bestFill = maxC / niceMax;
+  for (const sc of [3, 4, 5]) {
+    const rawStep = maxC / sc;
+    const mag = Math.pow(10, Math.max(0, Math.floor(Math.log10(rawStep))));
+    for (const base of [1, 2, 2.5, 5, 10]) {
+      const s = base * mag;
+      if (s * sc >= maxC) {
+        const fill = maxC / (s * sc);     // 越高越好（柱子越撑满顶部）
+        const isIntStep = Number.isInteger(s);
+        // 新方案的填充率高于旧方案，或填充率相近且步长为整数则升级
+        if (fill > bestFill + 1e-6 || (Math.abs(fill - bestFill) < 1e-3 && isIntStep && !Number.isInteger(niceStep))) {
+          bestFill = fill; niceMax = s * sc; niceStep = s; stepCount = sc;
+        }
+        break; // 同 mag 下第一个满足的 base 就是该 mag 下最紧的
+      }
+    }
+  }
+
+  // y 网格线
+  let grid = '';
+  for (let s = 0; s <= stepCount; s++) {
+    const v = niceStep * s;
+    const y = padT + innerH - (v / niceMax) * innerH;
+    grid += `<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="rgba(42,35,30,0.06)" stroke-width="1"/>`;
+    grid += `<text x="${padL-8}" y="${y+5}" text-anchor="end" font-size="13" fill="#6E6357" font-family="JetBrains Mono">${Number.isInteger(v) ? v : v.toFixed(1)}</text>`;
+  }
+
+  // 柱子
+  let bars = '';
+  buckets.forEach((b,i)=>{
+    const x = padL + i*(barW+gap);
+    const bh = (b.count/niceMax)*innerH;
+    const peak = b.count === maxC && b.count > 0;
+    const fill = peak ? 'url(#hourPeak)' : 'url(#hourBar)';
+    bars += `
+      <rect x="${x}" y="${padT+innerH-bh}" width="${barW}" height="${bh}" rx="3" fill="${fill}"/>
+      ${b.count > 0 ? `<text x="${x+barW/2}" y="${padT+innerH-bh-6}" text-anchor="middle" font-size="14" fill="${peak?'#E6A823':'#6B6052'}" font-family="JetBrains Mono" font-weight="${peak?600:500}">${b.count}</text>` : ''}
+      <text x="${x+barW/2}" y="${H-padB+16}" text-anchor="middle" font-size="13" fill="#6E6357" font-family="JetBrains Mono">${b.hour}</text>
+      <text x="${x+barW/2}" y="${H-padB+34}" text-anchor="middle" font-size="13" fill="#9B8E7E" font-family="JetBrains Mono">${b.hour+2}</text>
+    `;
+  });
+
+  wrap.innerHTML = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="时间段分布">
+    <defs>
+      <linearGradient id="hourBar" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#E6A823"/><stop offset="100%" stop-color="#C8901A"/></linearGradient>
+      <linearGradient id="hourPeak" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#F0C04E"/><stop offset="100%" stop-color="#E6A823"/></linearGradient>
+    </defs>
+    ${grid}
+    ${bars}
+    <text x="${padL-8}" y="${H-6}" text-anchor="end" font-size="13" fill="#9B8E7E">点</text>
+  </svg>`;
+}
+
+/* ---------- Amount distribution (订单金额分布) ---------- */
+/* 按金额区间分桶统计订单数，横向条形图展示 */
+function drawAmtDist(data){
+  const wrap = $('#amtChart');
+  const badge = $('#amtBadge');
+  if(!data.length){ wrap.innerHTML = emptyChart('暂无数据'); badge.textContent='区间统计'; return; }
+
+  // 分桶：<10 / 10-15 / 15-20 / 20-25 / 25-30 / 30+
+  const ranges = [
+    { max:10,  label:'<10' },
+    { max:15,  label:'10-15' },
+    { max:20,  label:'15-20' },
+    { max:25,  label:'20-25' },
+    { max:30,  label:'25-30' },
+    { max:Infinity, label:'30+' },
+  ];
+  const buckets = ranges.map(r=>({ label:r.label, max:r.max, count:0, sum:0 }));
+  data.forEach(r=>{
+    const v = orderIncome(r);
+    for(const b of buckets){
+      if(v < b.max){ b.count++; b.sum += v; break; }
+    }
+  });
+  const total = buckets.reduce((a,b)=>a+b.count,0);
+  const maxC = Math.max(1, ...buckets.map(b=>b.count));
+  badge.textContent = `${total} 单`;
+
+  // 布局分区（W=720）：左标签 | 柱状区 | 数量标签区 | 均价标签区
+  // 所有标签固定坐标，柱长硬上限，永不重叠；同时压缩中间空隙，整体更紧凑
+  const W=720, H=240, padT=18, padB=18;
+  const labelX = 76;          // ¥区间标签：右对齐在此 x
+  const barStartX = 86;       // 柱子起点
+  const barMaxEndX = 570;     // 柱子最远终点（硬上限）→ 柱最大宽 484
+  const countX = 582;         // "X 单"标签：左对齐在此 x（与柱尾间距 12px）
+  const avgX = W - 14;        // "均¥X"标签：右对齐在右边缘
+  const barMaxW = barMaxEndX - barStartX;
+  const innerH = H - padT - padB;
+  const rowH = innerH / buckets.length;
+  const barH = Math.min(22, rowH - 10);
+
+  // 柱长采用 0.75 次幂压缩：既保持大小顺序，又避免某一桶远大于其他时视觉失衡
+  const pow = 0.75;
+  const maxPowed = Math.pow(maxC, pow);
+
+  let rows = '';
+  buckets.forEach((b,i)=>{
+    const y = padT + i*rowH + rowH/2;
+    const bw = b.count > 0 ? Math.max(4, Math.pow(b.count, pow) / maxPowed * barMaxW) : 0;
+    const avg = b.count ? b.sum/b.count : 0;
+    const peak = b.count === maxC && b.count > 0;
+    const fill = peak ? 'url(#amtPeak)' : 'url(#amtBar)';
+    rows += `
+      <text x="${labelX}" y="${y+5}" text-anchor="end" font-size="13" fill="#6B6052" font-family="JetBrains Mono">¥${b.label}</text>
+      <rect x="${barStartX}" y="${y-barH/2}" width="${bw}" height="${barH}" rx="4" fill="${fill}"/>
+      <text x="${countX}" y="${y+5}" text-anchor="start" font-size="14" fill="${peak?'#E6A823':'#6B6052'}" font-family="JetBrains Mono" font-weight="${peak?600:500}">${b.count} 单</text>
+      <text x="${avgX}" y="${y+5}" text-anchor="end" font-size="13" fill="#9B8E7E" font-family="JetBrains Mono">均¥${Math.round(avg)}</text>
+    `;
+  });
+
+  wrap.innerHTML = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="金额分布">
+    <defs>
+      <linearGradient id="amtBar" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#2E8B7E"/><stop offset="100%" stop-color="#5BBAAB"/></linearGradient>
+      <linearGradient id="amtPeak" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#C8901A"/><stop offset="100%" stop-color="#F0C04E"/></linearGradient>
+    </defs>
+    ${rows}
+  </svg>`;
+}
+
+function emptyChart(msg){
+  return `<div style="text-align:center;padding:40px 10px;color:var(--muted-2);font-size:13px;">${msg}</div>`;
+}
+
+/* ---------- 通用横向条形分布图：按区间分桶统计订单数，并展示区间均值 ---------- */
+function drawHBarDist(wrap, badge, data, valueFn, ranges, labelPrefix, avgPrefix, unit, gid){
+  const total = data.length;
+  if(!total){ wrap.innerHTML = emptyChart('暂无数据'); badge.textContent='分布统计'; return; }
+  const buckets = ranges.map(r=>({ label:r.label, max:r.max, count:0, sum:0 }));
+  data.forEach(r=>{
+    const v = valueFn(r);
+    if(!isFinite(v) || v < 0) return;
+    for(const b of buckets){ if(v < b.max){ b.count++; b.sum += v; break; } }
+  });
+  const counted = buckets.reduce((a,b)=>a+b.count,0);
+  const maxC = Math.max(1, ...buckets.map(b=>b.count));
+  badge.textContent = `${counted} 单`;
+
+  const W=720, H=240, padT=18, padB=18;
+  const labelX = 76;
+  const barStartX = 86;
+  const barMaxEndX = 570;
+  const countX = 582;
+  const avgX = W - 14;
+  const barMaxW = barMaxEndX - barStartX;
+  const innerH = H - padT - padB;
+  const rowH = innerH / buckets.length;
+  const barH = Math.min(22, rowH - 10);
+  const pow = 0.75;
+  const maxPowed = Math.pow(maxC, pow);
+
+  let rows = '';
+  buckets.forEach((b,i)=>{
+    const y = padT + i*rowH + rowH/2;
+    const bw = b.count > 0 ? Math.max(4, Math.pow(b.count, pow)/maxPowed*barMaxW) : 0;
+    const avg = b.count ? b.sum/b.count : 0;
+    const peak = b.count === maxC && b.count > 0;
+    const fill = peak ? `url(#${gid}Peak)` : `url(#${gid}Bar)`;
+    rows += `
+      <text x="${labelX}" y="${y+5}" text-anchor="end" font-size="13" fill="#6B6052" font-family="JetBrains Mono">${labelPrefix}${b.label}</text>
+      <rect x="${barStartX}" y="${y-barH/2}" width="${bw}" height="${barH}" rx="4" fill="${fill}"/>
+      <text x="${countX}" y="${y+5}" text-anchor="start" font-size="14" fill="${peak?'#E6A823':'#6B6052'}" font-family="JetBrains Mono" font-weight="${peak?600:500}">${b.count} 单</text>
+      <text x="${avgX}" y="${y+5}" text-anchor="end" font-size="13" fill="#9B8E7E" font-family="JetBrains Mono">${avgPrefix}${avg ? Math.round(avg) : 0}${unit}</text>
+    `;
+  });
+
+  wrap.innerHTML = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="分布统计">
+    <defs>
+      <linearGradient id="${gid}Bar" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#2E8B7E"/><stop offset="100%" stop-color="#5BBAAB"/></linearGradient>
+      <linearGradient id="${gid}Peak" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#C8901A"/><stop offset="100%" stop-color="#F0C04E"/></linearGradient>
+    </defs>
+    ${rows}
+  </svg>`;
+}
+
+/* ---------- 里程分布 ---------- */
+function drawDistDist(data){
+  const ranges = [
+    { max:10, label:'<10' },
+    { max:15, label:'10-15' },
+    { max:20, label:'15-20' },
+    { max:30, label:'25-30' },
+    { max:Infinity, label:'>30' },
+  ];
+  drawHBarDist($('#distChart'), $('#distBadge'), data, r=>parseFloat(r.distance), ranges, '', '均', 'km', 'dist');
+}
+
+/* ---------- 耗时分布 ---------- */
+function drawDurDist(data){
+  const ranges = [
+    { max:20, label:'<20' },
+    { max:30, label:'20-30' },
+    { max:40, label:'30-40' },
+    { max:50, label:'40-50' },
+    { max:60, label:'50-60' },
+    { max:Infinity, label:'>60' },
+  ];
+  drawHBarDist($('#durChart'), $('#durBadge'), data, r=>parseFloat(r.duration), ranges, '', '均', 'min', 'dur');
+}
+
+/* ---------- 类型占比（独享 / 拼座）环形图 ---------- */
+function drawTypeDist(data){
+  const wrap = $('#typeChart');
+  const breakdown = $('#typeBreakdown');
+  const badge = $('#typeBadge');
+  let ds=0, ps=0;
+  data.forEach(r=>{
+    if(r.rideType === '独享') ds++;
+    else if(r.rideType === '拼座') ps++;
+  });
+  const total = ds + ps;
+  if(!total){
+    wrap.innerHTML = emptyChart('暂无数据');
+    breakdown.innerHTML = `<div style="text-align:center;color:var(--muted-2);padding:10px;font-size:12px;">添加记录后即可查看独享/拼座占比</div>`;
+    badge.textContent = '独享/拼座';
+    return;
+  }
+  const dsp = ds/total, psp = ps/total;
+  const noType = data.length - total;
+
+  const cx=110, cy=110, R=82, r=54;
+  const circ = 2*Math.PI*R;
+  const dsLen = circ * dsp;
+  const psLen = circ * psp;
+  const dsDash = `${dsLen} ${circ - dsLen}`;
+  const psDash = `${psLen} ${circ - psLen}`;
+
+  wrap.innerHTML = `<svg viewBox="0 0 220 220" preserveAspectRatio="xMidYMid meet" style="max-width:220px;margin:0 auto;display:block;" role="img" aria-label="类型占比">
+    <defs>
+      <linearGradient id="dsG" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#5BBAAB"/><stop offset="100%" stop-color="#2E8B7E"/></linearGradient>
+      <linearGradient id="psG" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#F0C04E"/><stop offset="100%" stop-color="#C8901A"/></linearGradient>
+    </defs>
+    <circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="rgba(42,35,30,0.05)" stroke-width="${R-r}"/>
+    <circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="url(#dsG)" stroke-width="${R-r}"
+      stroke-dasharray="${dsDash}" stroke-dashoffset="${circ*0.25}"
+      transform="rotate(-90 ${cx} ${cy})" stroke-linecap="butt"/>
+    <circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="url(#psG)" stroke-width="${R-r}"
+      stroke-dasharray="${psDash}" stroke-dashoffset="${circ*0.25 - dsLen}"
+      transform="rotate(-90 ${cx} ${cy})" stroke-linecap="butt"/>
+    <text x="${cx}" y="${cy-6}" text-anchor="middle" font-family="Manrope" font-size="10" fill="#9B8E7E" letter-spacing="1.5">已识别类型</text>
+    <text x="${cx}" y="${cy+18}" text-anchor="middle" font-family="Manrope" font-size="24" fill="#2A231E" font-weight="700">${total}<tspan font-size="12" fill="#9B8E7E"> 单</tspan></text>
+  </svg>`;
+
+  badge.textContent = `独享${Math.round(dsp*100)}%/拼座${Math.round(psp*100)}%`;
+
+  const maxV = Math.max(ds, ps, 1);
+  breakdown.innerHTML = `
+    <div class="pf-row">
+      <div class="top">
+        <div class="name"><span class="sw" style="background:#2E8B7E"></span>独享</div>
+        <div class="vals"><b>${ds} 单</b> · ${(dsp*100).toFixed(0)}%</div>
+      </div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(ds/maxV*100)}%;background:linear-gradient(90deg,#5BBAAB,#2E8B7E);"></div></div>
+    </div>
+    <div class="pf-row">
+      <div class="top">
+        <div class="name"><span class="sw" style="background:#C8901A"></span>拼座</div>
+        <div class="vals"><b>${ps} 单</b> · ${(psp*100).toFixed(0)}%</div>
+      </div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(ps/maxV*100)}%;background:linear-gradient(90deg,#F0C04E,#C8901A);"></div></div>
+    </div>` +
+    (noType ? `<div style="text-align:center;color:var(--muted-2);padding:8px;font-size:12px;">另有 ${noType} 单未填写类型</div>` : '');
+}
+
+/* ============================================================
+   CALENDAR VIEW
+   ============================================================ */
+let calYear, calMonth;     // 当前显示的月份
+let calFilter = 'all';     // 平台筛选
+let calSelectedDate = null; // 选中的日期
+
+function renderCalendar(){
+  if(calYear === undefined){
+    const now = new Date();
+    calYear = now.getFullYear();
+    calMonth = now.getMonth();
+  }
+  drawCalendar();
+}
+
+function drawCalendar(){
+  const grid = $('#calGrid');
+  const ymEl = $('#calYM');
+  const sumEl = $('#calSummary');
+
+  // 月份标题
+  ymEl.innerHTML = `${calMonth + 1} 月 <span class="yr">${calYear}</span>`;
+
+  // 当月所有记录（按平台筛选）
+  const monthData = DB.filter(r => {
+    const d = parseDate(r.date);
+    return d.getFullYear() === calYear && d.getMonth() === calMonth &&
+           (calFilter === 'all' || r.platform === calFilter);
+  });
+
+  // 按日期聚合
+  const dayMap = {};
+  monthData.forEach(r => {
+    const d = parseDate(r.date);
+    const key = fmtDate(d);
+    if(!dayMap[key]) dayMap[key] = { date: d, items: [], sum: 0, gaode:0, didi:0 };
+    dayMap[key].items.push(r);
+    dayMap[key].sum += orderIncome(r);
+    if(r.platform === 'gaode') dayMap[key].gaode += orderIncome(r);
+    else dayMap[key].didi += orderIncome(r);
+  });
+
+  // 月份汇总
+  const monthSum = monthData.reduce((a,r)=>a + orderIncome(r), 0);
+  const monthOrders = monthData.length;
+  const activeDays = Object.keys(dayMap).length;
+  const avgPerDay = activeDays ? monthSum/activeDays : 0;
+  sumEl.innerHTML = `合计 <b>¥${money(monthSum)}</b> · ${monthOrders} 单 · ${activeDays} 天 · 日均 <b>¥${Math.round(avgPerDay)}</b>`;
+
+  // 计算热力图分级阈值
+  const sums = Object.values(dayMap).map(d => d.sum);
+  const maxSum = sums.length ? Math.max(...sums) : 0;
+
+  // 构建日历格子
+  const firstDay = new Date(calYear, calMonth, 1);
+  const lastDate = new Date(calYear, calMonth + 1, 0).getDate();
+  // 周一为一周起点: 0=Mon
+  let startOffset = firstDay.getDay() - 1; // Sun(0)->-1, Mon(1)->0
+  if(startOffset < 0) startOffset = 6; // 周日归到末尾
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  let html = '';
+
+  // 前置空格
+  for(let i=0;i<startOffset;i++){
+    html += `<div class="cal-cell empty"></div>`;
+  }
+
+  for(let day=1; day<=lastDate; day++){
+    const d = new Date(calYear, calMonth, day);
+    const key = fmtDate(d);
+    const data = dayMap[key];
+    const isToday = d.getTime() === today.getTime();
+    const isSel = calSelectedDate === key;
+
+    if(data){
+      const level = heatLevel(data.sum, maxSum);
+      const amtStr = formatShort(data.sum);
+      const pfDots = [];
+      if(data.gaode > 0) pfDots.push(`<span class="pd gaode" title="高德 ¥${money(data.gaode)}"></span>`);
+      if(data.didi > 0) pfDots.push(`<span class="pd didi" title="滴滴 ¥${money(data.didi)}"></span>`);
+
+      html += `<div class="cal-cell has heat-${level} ${isToday?'today':''} ${isSel?'sel':''}" data-date="${key}">
+        <div class="d-pf">${pfDots.join('')}</div>
+        <div class="d-num">${day}</div>
+        <div>
+          <div class="d-amt tnum"><span class="cur">¥</span>${amtStr}</div>
+          <div class="d-cnt">${data.items.length} 单</div>
+        </div>
+      </div>`;
+    } else {
+      html += `<div class="cal-cell ${isToday?'today':''} ${isSel?'sel':''}" data-date="${key}">
+        <div class="d-num">${day}</div>
+        <div></div>
+      </div>`;
+    }
+  }
+
+  grid.innerHTML = html;
+
+  // 渲染选中日期的详情
+  renderDayDetail();
+
+  // 绑定点击
+  $$('.cal-cell:not(.empty)', grid).forEach(cell => {
+    cell.addEventListener('click', ()=>{
+      calSelectedDate = cell.dataset.date;
+      drawCalendar();
+      // 滚动到详情
+      setTimeout(()=>{
+        $('#calDayDetail')?.scrollIntoView({behavior:'smooth', block:'nearest'});
+      }, 50);
+    });
+  });
+}
+
+function heatLevel(v, max){
+  if(v <= 0) return 0;
+  if(max <= 0) return 0;
+  const ratio = v / max;
+  if(ratio >= 0.85) return 5;
+  if(ratio >= 0.6) return 4;
+  if(ratio >= 0.4) return 3;
+  if(ratio >= 0.2) return 2;
+  return 1;
+}
+
+function formatShort(v){
+  // 紧凑金额: 1.2k / 856
+  v = Math.round(v);
+  if(v >= 1000) return (v/1000).toFixed(1) + 'k';
+  return String(v);
+}
+
+function renderDayDetail(){
+  const wrap = $('#calDayDetail');
+  if(!calSelectedDate){
+    wrap.classList.add('empty');
+    wrap.innerHTML = '';
+    return;
+  }
+  const d = parseDate(calSelectedDate);
+  const items = DB.filter(r => r.date === calSelectedDate &&
+    (calFilter === 'all' || r.platform === calFilter))
+    .sort((a,b)=> (a.time||'') < (b.time||'') ? -1 : 1);
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  const diff = daysBetween(d, today);
+  let label;
+  if(diff === 0) label = '今天';
+  else if(diff === 1) label = '昨天';
+  else if(diff === -1) label = '明天';
+  else label = `${d.getMonth()+1}月${d.getDate()}日`;
+  const wk = WEEKDAYS[d.getDay()];
+
+  const sum = items.reduce((a,r)=>a+orderIncome(r),0);
+
+  if(items.length === 0){
+    wrap.classList.remove('empty');
+    wrap.innerHTML = `
+      <div class="cal-dd-head">
+        <div class="lbl">${label} <span class="wk">${wk}</span></div>
+        <div class="sum">无记录</div>
+      </div>
+      <div class="cal-empty-hint">
+        这一天还没有订单记录
+        <div class="add" id="calAddForDay">+ 记一笔</div>
+      </div>`;
+    $('#calAddForDay').addEventListener('click', ()=>{
+      openModal();
+      $('#fDate').value = calSelectedDate;
+    });
+    return;
+  }
+
+  wrap.classList.remove('empty');
+  let listHtml = '';
+  items.forEach(r => {
+    const pf = PF_META[r.platform];
+    const amt = moneyParts(orderIncome(r));
+    const meta = [];
+    if(r.time) meta.push(`<span class="m">${r.time}</span>`);
+    if(r.distance) meta.push(`<span class="m">${r.distance}km</span>`);
+    if(r.duration) meta.push(`<span class="m">${r.duration}min</span>`);
+    if(r.seats) meta.push(`<span class="m">${r.seats}人</span>`);
+    if(r.rideType) meta.push(`<span class="m">${r.rideType}</span>`);
+    if(r.bonus > 0) meta.push(`<span class="m m-bonus">奖励 ¥${r.bonus}</span>`);
+    if(r.note) meta.push(`<span class="m note">${escapeHtml(r.note)}</span>`);
+    const route = (r.pickup || r.dropoff)
+      ? `<div class="route"><span class="from">${escapeHtml(r.pickup||'起点')}</span><span class="arrow">→</span><span class="to">${escapeHtml(r.dropoff||'终点')}</span></div>`
+      : `<div class="route"><span class="from">${pf.label}</span></div>`;
+
+    listHtml += `
+      <div class="rec ${r.platform}" data-id="${r.id}">
+        <div class="pf">${pf.short}</div>
+        <div class="info">
+          ${route}
+          <div class="meta">${meta.join('')}</div>
+        </div>
+        <div class="amt">
+          <div class="n tnum"><span class="cur">¥</span>${amt.int}<span class="dec">.${amt.dec}</span></div>
+        </div>
+        <div class="acts">
+          <button class="icon-btn btn-edit" aria-label="编辑"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></button>
+          <button class="icon-btn danger btn-del" aria-label="删除"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg></button>
+        </div>
+      </div>`;
+  });
+
+  wrap.innerHTML = `
+    <div class="cal-dd-head">
+      <div class="lbl">${label} <span class="wk">${wk}</span></div>
+      <div class="sum">${items.length} 单 · 合计 <b>¥${money(sum)}</b></div>
+    </div>
+    <div class="cal-dd-list">${listHtml}</div>
+    <div class="cal-empty-hint">
+      <div class="add" id="calAddForDay">+ 记一笔</div>
+    </div>`;
+
+  // bind actions
+  $$('.rec', wrap).forEach(card => {
+    const id = card.dataset.id;
+    $('.btn-edit', card)?.addEventListener('click', ()=> openModal(id));
+    $('.btn-del', card)?.addEventListener('click', ()=> openModal(id, true));
+  });
+  $('#calAddForDay').addEventListener('click', ()=>{
+    openModal();
+    $('#fDate').value = calSelectedDate;
+  });
+}
+
+/* calendar nav */
+$('#calPrev').addEventListener('click', ()=>{
+  calMonth--;
+  if(calMonth < 0){ calMonth = 11; calYear--; }
+  calSelectedDate = null;
+  drawCalendar();
+});
+$('#calNext').addEventListener('click', ()=>{
+  calMonth++;
+  if(calMonth > 11){ calMonth = 0; calYear++; }
+  calSelectedDate = null;
+  drawCalendar();
+});
+$('#calTodayBtn').addEventListener('click', ()=>{
+  const now = new Date();
+  calYear = now.getFullYear();
+  calMonth = now.getMonth();
+  calSelectedDate = fmtDate(now);
+  drawCalendar();
+});
+
+/* calendar platform filter */
+$('#calPfFilter').addEventListener('click', e=>{
+  const b = e.target.closest('.chip'); if(!b) return;
+  $$('#calPfFilter .chip').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  calFilter = b.dataset.cfilter;
+  drawCalendar();
+});
+
+/* ---------- Refresh ---------- */
+function refresh(){
+  renderHero();
+  renderRecords();
+  if($('#view-stats').classList.contains('active')) renderStats();
+  if($('#view-calendar').classList.contains('active')) drawCalendar();
+}
+
+/* ---------- Settings (每公里电耗 / 导出 / 导入 / 大模型) ---------- */
+const settingsOverlay = $('#settingsOverlay');
+const fileImport = $('#fileImport');
+
+function openSettings(){ settingsOverlay.classList.add('show'); }
+function closeSettings(){ settingsOverlay.classList.remove('show'); }
+
+/* 从 OCR 面板跳转到「设置大模型 API」：关闭当前弹窗，打开设置弹窗 */
+function openOcrSettings(){
+  closeModal();
+  openSettings();
+  setTimeout(()=>{ const t = $('#ocrKey'); if(t) t.focus(); }, 350);
+}
+
+$('#btnSettings').addEventListener('click', ()=>{
+  openSettings();
+  // 回填每公里电耗当前值
+  const pc = $('#powerCostInput');
+  if(pc) pc.value = loadPowerCost();
+});
+$('#settingsClose').addEventListener('click', closeSettings);
+settingsOverlay.addEventListener('click', e => { if(e.target === settingsOverlay) closeSettings(); });
+$('#ocrGoSettings').addEventListener('click', openOcrSettings);
+
+/* 保存每公里电耗 */
+$('#btnSavePowerCost').addEventListener('click', ()=>{
+  const val = parseFloat($('#powerCostInput').value);
+  if(isNaN(val) || val < 0){
+    toast('请输入不小于 0 的数字', 'err');
+    return;
+  }
+  savePowerCost(val);
+  toast('每公里电耗已保存：' + val + ' 元/km');
+  // 实时刷新统计
+  if($('#view-stats').classList.contains('active')) renderStats();
+});
+
+/* 分享：截图当前账本界面 → 调用原生分享（微信好友/朋友圈/保存本地）
+ * 浏览器环境回退为下载图片。 */
+let _shareBusy = false;
+$('#btnShare').addEventListener('click', async ()=>{
+  if(_shareBusy) return;
+  _shareBusy = true;
+  // 临时隐藏浮动按钮避免出现在截图里
+  const floatBtns = document.querySelectorAll('.fab, .float-add');
+  floatBtns.forEach(el => el.style.visibility = 'hidden');
+  try{
+    if(typeof html2canvas === 'undefined'){ throw new Error('截图组件尚未加载完成，请稍后重试'); }
+    toast('⏳ 正在生成截图…');
+    // 截取 .app 容器（主内容区，不含系统栏 padding）
+    const target = document.querySelector('.app') || document.body;
+    const canvas = await html2canvas(target, {
+      scale: 2, // 2x 保证清晰度
+      useCORS: true,
+      backgroundColor: '#FBF9F3',
+      logging: false,
+      scrollX: 0,
+      scrollY: -window.scrollY
+    });
+    // 转 JPEG（体积更小，微信分享更友好），质量 0.92
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+    const filename = 'shunfeng-ledger-' + fmtDate(new Date()) + '.jpg';
+    if(window.Android && window.Android.shareImage){
+      // 原生：唤起系统分享面板（含微信/朋友圈/保存到相册）
+      window.Android.shareImage(dataUrl, filename);
+    } else {
+      // 浏览器：直接下载图片
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      toast('已下载截图：' + filename);
+    }
+  }catch(e){
+    toast('截图失败：' + (e && e.message || String(e)), 'err');
+  }finally{
+    floatBtns.forEach(el => el.style.visibility = '');
+    _shareBusy = false;
+  }
+});
+
+/* 导出：WebView 用 Android 原生接口写文件，浏览器则直接下载 */
+$('#btnExport').addEventListener('click', ()=>{
+  const json = JSON.stringify(DB, null, 2);
+  const filename = 'shunfeng-ledger-' + fmtDate(new Date()) + '.json';
+  if(window.Android && window.Android.exportData){
+    window.Android.exportData(json, filename);
+    toast('已导出到手机「下载」目录');
+  } else {
+    // 浏览器 / 电脑端下载
+    const blob = new Blob([json], { type:'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+    toast('已导出文件');
+  }
+  closeSettings();
+});
+
+/* 导入：读取 JSON 文件并按记录 id 合并（新增或更新，不覆盖已有） */
+function mergeImportArray(arr){
+  if(!Array.isArray(arr)) throw new Error('not-array');
+  let added = 0, updated = 0;
+  const map = new Map(DB.map(r => [r.id, r]));
+  arr.forEach(r => {
+    if(!r || !r.id || typeof r.date !== 'string') return;
+    if(map.has(r.id)) updated++; else added++;
+    map.set(r.id, r);
+  });
+  DB = [...map.values()];
+  saveDB();
+  refresh();
+  return { added, updated };
+}
+$('#btnImport').addEventListener('click', ()=> fileImport.click());
+fileImport.addEventListener('change', ()=>{
+  const file = fileImport.files && fileImport.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try{
+      const r = mergeImportArray(JSON.parse(e.target.result));
+      toast(`导入完成：新增 ${r.added} 条，更新 ${r.updated} 条`);
+    }catch(err){
+      toast('文件格式不正确，请选择由本应用导出的 json 文件', 'err');
+    }
+  };
+  reader.readAsText(file);
+  fileImport.value = '';
+  closeSettings();
+});
+
+/* 从微信导入：原生端打开微信主界面，用户在聊天中长按 json →「其他应用打开」→ 选本应用，
+ * 系统以 ACTION_VIEW/SEND 回调 MainActivity，原生读取文件内容后回调 window.__onWechatImportResult */
+$('#btnImportWechat').addEventListener('click', ()=>{
+  if(!window.Android || !window.Android.pickFileFromWechat){
+    toast('当前环境不支持从微信导入，请用「从文件导入数据」', 'err');
+    return;
+  }
+  toast('已打开微信，请在聊天中找到 json 文件 → 长按 →「其他应用打开」→ 选择顺风账本');
+  window.Android.pickFileFromWechat();
+});
+// 原生回调：合并 JSON 到 DB
+window.__onWechatImportResult = function(ok, jsonOrError){
+  if(!ok){
+    toast('导入失败：' + (jsonOrError || '已取消'), 'err');
+    return;
+  }
+  try{
+    const r = mergeImportArray(JSON.parse(jsonOrError));
+    toast(`导入完成：新增 ${r.added} 条，更新 ${r.updated} 条`);
+    closeSettings();
+  }catch(err){
+    toast('文件格式不正确，请选择由本应用导出的 json 文件', 'err');
+  }
+};
+
+/* ---------- OCR 图片识别 ---------- */
+const scanFile = $('#scanFile');
+const ocrPanel = $('#ocrPanel');
+const ocrProgress = $('#ocrProgress');
+const ocrReview = $('#ocrReview');
+const ocrFill = $('#ocrFill');
+const ocrTip = $('#ocrTip');
+const ocrRaw = $('#ocrRaw');
+const ocrRawToggle = $('#ocrRawToggle');
+let ocrParsed = null;   // 解析后的待填入数据
+
+$('#fabScan').addEventListener('click', ()=> scanFile.click());
+scanFile.addEventListener('change', ()=>{
+  const file = scanFile.files && scanFile.files[0];
+  if(!file) return;
+  startOcr(file);
+  scanFile.value = '';
+});
+
+ocrRawToggle.addEventListener('click', ()=>{
+  const open = ocrRaw.classList.toggle('show');
+  ocrRawToggle.textContent = (open ? '▲ ' : '▼ ') + '查看识别原文';
+});
+$('#ocrCancel').addEventListener('click', ()=> resetOcrAndClose());
+$('#ocrConfirm').addEventListener('click', ()=>{
+  if(!ocrParsed) return;
+  applyOcrToForm(ocrParsed);
+  // 验证必填项
+  const rec = buildRecFromForm();
+  if(!rec.date){ toast('请选择日期', 'err'); return; }
+  if(!(rec.amount > 0)){ toast('请输入金额', 'err'); return; }
+  // 重复订单检测：同一日期+时间段已存在 → 提醒并阻止创建（OCR 面板中弹窗不可见，用 toast 提示）
+  if(blockIfDuplicate(rec)) return;
+  commitSave(rec);
+  // 重置 OCR 状态，避免下次识别残留
+  ocrParsed = null;
+  ocrPanel.classList.add('hidden');
+  ocrProgress.classList.remove('hidden');
+  ocrReview.classList.add('hidden');
+});
+
+function resetOcrAndClose(){
+  ocrPanel.classList.add('hidden');
+  ocrProgress.classList.remove('hidden');
+  ocrReview.classList.add('hidden');
+  ocrRaw.classList.remove('show');
+  ocrRawToggle.textContent = '▼ 查看识别原文';
+  $('#ocrNoConfig').classList.add('hidden');
+  ocrParsed = null;
+  closeModal();
+}
+
+function setStep(n){
+  for(let i=1;i<=4;i++){
+    $('#ocrStep'+i).classList.toggle('done', i<=n);
+  }
+}
+
+/* 启动 OCR 流程 */
+function startOcr(file){
+  // 打开弹窗
+  openModal();
+  $('#recForm').classList.add('hidden');
+  ocrPanel.classList.remove('hidden');
+  ocrProgress.classList.remove('hidden');
+  ocrReview.classList.add('hidden');
+  $('#modalTitle').textContent = '图片识别';
+  setStep(1);
+  ocrFill.style.width = '5%';
+  ocrTip.textContent = '读取图片…';
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    const dataUrl = e.target.result;
+    setStep(2);
+    ocrFill.style.width = '15%';
+    ocrTip.textContent = '正在加载识别引擎（首次需下载中文模型，约 10-30s，后续会很快）…';
+    runTesseract(dataUrl);
+  };
+  reader.readAsDataURL(file);
+}
+
+/* 从 dataUrl 启动 OCR（接收外部分享图片，跳过 FileReader 步骤） */
+function startOcrFromDataUrl(dataUrl){
+  openModal();
+  $('#recForm').classList.add('hidden');
+  ocrPanel.classList.remove('hidden');
+  ocrProgress.classList.remove('hidden');
+  ocrReview.classList.add('hidden');
+  $('#modalTitle').textContent = '图片识别';
+  setStep(2);
+  ocrFill.style.width = '15%';
+  ocrTip.textContent = '正在加载识别引擎（首次需下载中文模型，约 10-30s，后续会很快）…';
+  runTesseract(dataUrl);
+}
+
+/* 原生回调：收到外部分享的图片 → 自动 OCR 识别录入 */
+window.__onSharedImage = function(dataUrl){
+  if(!dataUrl){ toast('未收到图片数据', 'err'); return; }
+  startOcrFromDataUrl(dataUrl);
+};
+window.__onSharedImageError = function(msg){
+  toast('图片接收失败：' + (msg || '未知错误'), 'err');
+};
+
+
+/* 展示解析结果预览 */
+function showOcrReview(r){
+  ocrParsed = r;
+  ocrProgress.classList.add('hidden');
+  ocrReview.classList.remove('hidden');
+
+  $('#ocrPlatform').textContent = r.platformLabel;
+  const dateEl = $('#ocrDate');
+  // 未识别到日期时默认填当天日期
+  if(!r.date){ r.date = fmtDate(new Date()); }
+  dateEl.textContent = r.date;
+  const timeEl = $('#ocrTime'); timeEl.textContent = r.time || '未识别';
+  timeEl.classList.toggle('warn', !r.time);
+  const amtEl = $('#ocrAmount'); amtEl.textContent = r.amount ? '¥' + r.amount : '未识别';
+  amtEl.classList.toggle('warn', !r.amount);
+  amtEl.classList.toggle('amt', !!r.amount);
+  const bonusEl = $('#ocrBonus'); bonusEl.textContent = r.bonus ? '¥' + r.bonus : '无';
+  const pickEl = $('#ocrPickup'); pickEl.textContent = r.pickup || '未识别';
+  pickEl.classList.toggle('warn', !r.pickup);
+  const dropEl = $('#ocrDropoff'); dropEl.textContent = r.dropoff || '未识别';
+  dropEl.classList.toggle('warn', !r.dropoff);
+  $('#ocrSeats').textContent = r.seats;
+  $('#ocrRideType').textContent = r.rideType || '未识别';
+
+  // 里程 + 耗时：由识路大模型基于起点/终点/时间估算实际驾车里程和耗时
+  estimateRouteIntoReview(r);
+}
+
+/* 触发里程/耗时估算并渲染到预览
+ * - 调用识路大模型基于起点/终点/时间估算，含高峰期耗时与模糊地点候选
+ * - 识路未配置时跳过估算，提示用户手动填写里程/耗时 */
+function estimateRouteIntoReview(r){
+  const distEl = $('#ocrDistance');
+  const durEl = $('#ocrDuration');
+  const candEl = $('#ocrDistanceCandidates');
+  // 重置
+  distEl.textContent = '—';
+  distEl.classList.remove('hint','err');
+  durEl.textContent = '—';
+  durEl.classList.remove('hint','err');
+  candEl.classList.add('hidden');
+  candEl.innerHTML = '';
+
+  // 识路未配置：提示用户手动填写，不调用模型
+  const cfg = loadOcrCfg();
+  const hasRoute = !!(cfg.routeKey && cfg.routeEndpoint && cfg.routeModel);
+  if(!hasRoute){
+    distEl.textContent = '未配置识路模型（可手动填写）';
+    distEl.classList.add('hint');
+    durEl.textContent = '未配置识路模型';
+    durEl.classList.add('hint');
+    return;
+  }
+
+  if(!r.pickup || !r.dropoff){
+    distEl.textContent = '缺起点/终点，无法估算';
+    distEl.classList.add('hint');
+    durEl.textContent = '缺起点/终点';
+    durEl.classList.add('hint');
+    return;
+  }
+  distEl.textContent = '估算中…';
+  distEl.classList.add('hint');
+  durEl.textContent = '估算中…';
+  durEl.classList.add('hint');
+  estimateRoute(r.pickup, r.dropoff, r.time).then(res=>{
+    // 异步返回时若预览已切换/关闭则丢弃
+    if(ocrParsed !== r) return;
+    renderRouteResult(res);
+  }).catch(e=>{
+    if(ocrParsed !== r) return;
+    console.warn('[识路估算] 失败:', e && e.message || e);
+    r.distance = null;
+    r.duration = null;
+    distEl.textContent = '识路估算失败（可手动填写）';
+    distEl.classList.remove('hint');
+    distEl.classList.add('err');
+    durEl.textContent = '识路估算失败';
+    durEl.classList.remove('hint');
+    durEl.classList.add('err');
+  });
+}
+
+/* 渲染识路估算结果：无歧义直接显示里程+耗时；有歧义展示候选让用户选择 */
+function renderRouteResult(res){
+  const distEl = $('#ocrDistance');
+  const durEl = $('#ocrDuration');
+  const candEl = $('#ocrDistanceCandidates');
+  distEl.classList.remove('hint','err');
+  durEl.classList.remove('hint','err');
+
+  // 耗时显示文案：高峰期额外标注高峰耗时
+  const fmtDur = (d, isPeak, peakD) => {
+    if(!isFinite(d)) return '';
+    let s = d + ' min';
+    if(isPeak && isFinite(peakD) && peakD !== d) s += ' (高峰 ' + peakD + ' min)';
+    return s;
+  };
+
+  if(res.ambiguity && res.candidates && res.candidates.length){
+    distEl.textContent = '地点有多个可能，请选择：';
+    durEl.textContent = '';
+    candEl.innerHTML = '';
+    res.candidates.forEach((c,i)=>{
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'ocr-cand' + (i===0 ? ' on' : '');
+      b.innerHTML = '<span class="d"></span> <span class="m"></span>';
+      b.querySelector('.d').textContent = c.desc;
+      b.querySelector('.m').textContent = [
+        isFinite(c.distance_km) ? c.distance_km + ' km' : '',
+        isFinite(c.duration_min) ? c.duration_min + ' min' : ''
+      ].filter(Boolean).join(' · ');
+      b.addEventListener('click', ()=>{
+        candEl.querySelectorAll('.ocr-cand').forEach(x=>x.classList.remove('on'));
+        b.classList.add('on');
+        if(isFinite(c.distance_km)){
+          distEl.textContent = '里程：' + c.distance_km + ' km';
+          if(ocrParsed) ocrParsed.distance = c.distance_km;
+        }
+        if(isFinite(c.duration_min)){
+          durEl.textContent = '耗时：' + c.duration_min + ' min';
+          if(ocrParsed) ocrParsed.duration = c.duration_min;
+        }
+      });
+      candEl.appendChild(b);
+    });
+    candEl.classList.remove('hidden');
+    // 默认选中第一项，若有里程/耗时则先填入
+    if(ocrParsed){
+      if(isFinite(res.candidates[0].distance_km)) ocrParsed.distance = res.candidates[0].distance_km;
+      if(isFinite(res.candidates[0].duration_min)) ocrParsed.duration = res.candidates[0].duration_min;
+    }
+    return;
+  }
+
+  // 无歧义：直接显示里程 + 耗时（含高峰期标注）
+  if(isFinite(res.distance_km)){
+    distEl.textContent = res.distance_km + ' km' + (res.note ? ' · ' + res.note : '');
+    if(ocrParsed) ocrParsed.distance = res.distance_km;
+  } else {
+    distEl.textContent = '未能估算（可手动填写）';
+    distEl.classList.add('hint');
+    if(ocrParsed) ocrParsed.distance = null;
+  }
+  const durTxt = fmtDur(res.duration_min, res.is_peak, res.peak_duration_min);
+  if(durTxt){
+    durEl.textContent = durTxt;
+    if(ocrParsed) ocrParsed.duration = isFinite(res.duration_min) ? res.duration_min : null;
+  } else {
+    durEl.textContent = '未能估算（可手动填写）';
+    durEl.classList.add('hint');
+    if(ocrParsed) ocrParsed.duration = null;
+  }
+}
+
+/* 识路估算：用识路大模型（纯文本）基于起点/终点/时间估算实际驾车里程和耗时，限定区域内运营 */
+async function estimateRoute(pickup, dropoff, time){
+  const cfg = loadOcrCfg();
+  const endpoint = (cfg.routeEndpoint || '').replace(/\/+$/, '');
+  const model = cfg.routeModel || '';
+  const key = cfg.routeKey || '';
+  if(!endpoint || !model || !key) throw new Error('识路大模型 Key/Endpoint/Model 未配置，请先设置');
+  const region = (cfg.routeRegion || '河南省郑州市').trim();
+  const userPrompt = (cfg.routePrompt || '').trim();
+  const prompt = userPrompt ? userPrompt.replace(/\$\{region\}/g, region).replace(/\$\{pickup\}/g, pickup).replace(/\$\{dropoff\}/g, dropoff).replace(/\$\{time\}/g, time || '') : ROUTE_DEFAULT_PROMPT(region, pickup, dropoff, time || '未知');
+  const body = {
+    model: model,
+    temperature: 0,
+    response_format: { type: 'json_object' },
+    messages: [
+      { role: 'system', content: '你是一个熟悉中国城市地理的驾车路线估算助手，只返回 JSON，不输出任何多余文本。' },
+      { role: 'user', content: prompt }
+    ]
+  };
+  if(isLLMReasoningModel(model)) body.thinking = { type: 'disabled' };
+  const r = await llmHttpPost(
+    endpoint + '/chat/completions',
+    { 'Authorization': 'Bearer ' + key },
+    JSON.stringify(body),
+    60000
+  );
+  if(!r.ok){
+    let msg = 'HTTP ' + r.status;
+    try{ const j = JSON.parse(r.text); msg += '：' + (j.error && (j.error.message || j.error) || ''); }catch(e){}
+    throw new Error(msg);
+  }
+  let data;
+  try{ data = JSON.parse(r.text); }catch(e){ throw new Error('返回不是合法 JSON'); }
+  let raw = '';
+  try{
+    const msg = data.choices[0].message;
+    raw = msg.content || msg.reasoning_content || '';
+  }catch(e){ throw new Error('返回结构不含 choices[0].message.content'); }
+  const j = extractLLMJson(raw);
+  if(!j) throw new Error('未从返回中提取到 JSON');
+  const dist = parseFloat(j.distance_km);
+  const dur = parseFloat(j.duration_min);
+  const peakDur = parseFloat(j.peak_duration_min);
+  const candidates = Array.isArray(j.candidates)
+    ? j.candidates.map(c=>({
+        desc: String(c && c.desc || '').trim(),
+        distance_km: parseFloat(c && c.distance_km),
+        duration_min: parseFloat(c && c.duration_min)
+      })).filter(c=>c.desc)
+    : [];
+  return {
+    ambiguity: !!j.ambiguity,
+    distance_km: isFinite(dist) ? dist : null,
+    duration_min: isFinite(dur) ? dur : null,
+    is_peak: !!j.is_peak,
+    peak_duration_min: isFinite(peakDur) ? peakDur : null,
+    note: String(j.note || '').trim(),
+    candidates
+  };
+}
+
+/* 将解析结果填入记一笔表单 */
+function applyOcrToForm(r){
+  // 清空旧值
+  $('#fId').value = '';
+  $('#btnDelete').classList.add('hidden');
+  $('#confirmDelete').classList.add('hidden');
+  currentEditingId = null;
+
+  // 平台
+  setPlatform(r.platform || 'gaode');
+  // 日期：未识别到则默认今天
+  const today = fmtDate(new Date());
+  $('#fDate').value = r.date || today;
+  // 时间
+  if(r.time) $('#fTime').value = r.time; else $('#fTime').value = '';
+  // 金额：确保有值
+  if(r.amount && parseFloat(r.amount) > 0) {
+    $('#fAmount').value = r.amount;
+  } else {
+    $('#fAmount').value = '';
+  }
+  // 奖励
+  if(r.bonus) $('#fBonus').value = r.bonus; else $('#fBonus').value = '';
+  // 起点
+  if(r.pickup) $('#fPickup').value = r.pickup; else $('#fPickup').value = '';
+  // 终点
+  if(r.dropoff) $('#fDropoff').value = r.dropoff; else $('#fDropoff').value = '';
+  // 里程：由识路大模型基于起终点/时间估算的实际驾车里程（识路未配置或估算失败时为空，需手动填写）
+  if(r.distance && isFinite(parseFloat(r.distance)) && parseFloat(r.distance) > 0) {
+    $('#fDistance').value = parseFloat(r.distance);
+  } else {
+    $('#fDistance').value = '';
+  }
+  // 耗时：由识路大模型估算的实际驾车耗时（分钟）
+  if(r.duration && isFinite(r.duration) && r.duration > 0) {
+    $('#fDuration').value = r.duration;
+  } else {
+    $('#fDuration').value = '';
+  }
+
+  // 人数
+  if(r.seats && r.seats !== '—') $('#fSeats').value = r.seats; else $('#fSeats').value = '';
+  // 类型（独享 / 拼座）
+  if(r.rideType) $('#fRideType').value = r.rideType; else $('#fRideType').value = '';
+
+  // 备注提示（仅未识别项，便于回溯；拼座类型已单独作为「类型」字段）
+  const missList = [];
+  if(!r.date) missList.push('日期');
+  if(!r.amount) missList.push('金额');
+  if(!r.pickup) missList.push('起点');
+  if(!r.dropoff) missList.push('终点');
+  const noteParts = [];
+  if(missList.length) noteParts.push(`[OCR 未识别：${missList.join('、')}，请手动补充]`);
+  $('#fNote').value = noteParts.join(' ');
+}
+
+/* ---------- OCR 引擎配置 ---------- */
+const OCR_CFG_KEY = 'shunfeng_ocr_cfg_v1';
+function loadOcrCfg(){
+  try{
+    let cfg = JSON.parse(localStorage.getItem(OCR_CFG_KEY) || '{}');
+    // 迁移旧配置：llmKey → ocrKey 等
+    if(cfg.llmKey && !cfg.ocrKey){ cfg.ocrKey = cfg.llmKey; cfg.ocrEndpoint = cfg.llmEndpoint; cfg.ocrModel = cfg.llmModel; cfg.ocrPrompt = cfg.llmPrompt; }
+    if(cfg.distRegion && !cfg.routeRegion){ cfg.routeRegion = cfg.distRegion; }
+    return cfg;
+  }catch(e){ return {}; }
+}
+function saveOcrCfg(cfg){
+  localStorage.setItem(OCR_CFG_KEY, JSON.stringify(cfg));
+}
+
+/* 大模型预设（OpenAI 兼容多模态接口） */
+const LLM_PRESETS = {
+  'doubao-pro-vision': {
+    endpoint: 'https://ark.cn-beijing.volces.com/api/v3',
+    model: 'doubao-pro-32k-vision',
+    hint: '火山引擎 Ark → 创建视觉推理接入点获取模型 ID'
+  },
+  'doubao-flash-vision': {
+    endpoint: 'https://ark.cn-beijing.volces.com/api/v3',
+    model: 'doubao-1.5-pro-256k-vision',
+    hint: '豆包轻量视觉版，有免费额度'
+  },
+  'qwen-vl-plus': {
+    endpoint: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+    model: 'qwen-vl-plus',
+    hint: '阿里云百炼 / DashScope 兼容'
+  },
+  'qwen2.5-vl-72b-instruct': {
+    endpoint: 'https://api.siliconflow.cn/v1',
+    model: 'Qwen/Qwen2.5-VL-72B-Instruct',
+    hint: '硅基流动，注册有每日免费额度'
+  },
+  'glm-4.5v': {
+    endpoint: 'https://open.bigmodel.cn/api/paas/v4',
+    model: 'glm-4.5v',
+    hint: '智谱 AI 开放平台（推理视觉模型，推荐用于截图识别）'
+  },
+  'glm-4.6v': {
+    endpoint: 'https://open.bigmodel.cn/api/paas/v4',
+    model: 'glm-4.6v',
+    hint: '智谱 AI 开放平台（推理视觉模型，推荐用于截图识别）'
+  },
+  'glm-4v-plus': {
+    endpoint: 'https://open.bigmodel.cn/api/paas/v4',
+    model: 'glm-4v-plus',
+    hint: '智谱 AI 开放平台（视觉模型）'
+  },
+  'glm-4v-flash': {
+    endpoint: 'https://open.bigmodel.cn/api/paas/v4',
+    model: 'glm-4v-flash',
+    hint: '智谱 AI 开放平台（免费视觉模型）'
+  },
+  'glm-5.2': {
+    endpoint: 'https://open.bigmodel.cn/api/paas/v4',
+    model: 'glm-5.2',
+    hint: '智谱 AI 开放平台（纯文本推理模型，不可用于截图识别）'
+  },
+  'gpt-4o-mini': {
+    endpoint: 'https://api.openai.com/v1',
+    model: 'gpt-4o-mini',
+    hint: 'OpenAI 官方（需自备网络/Key）'
+  }
+};
+
+/* 识路大模型预设（纯文本模型，用于起终点→里程/耗时估算） */
+const ROUTE_PRESETS = {
+  'glm-4-flash': { endpoint: 'https://open.bigmodel.cn/api/paas/v4', model: 'glm-4-flash', hint: '智谱AI免费纯文本模型，速度快' },
+  'glm-4-air': { endpoint: 'https://open.bigmodel.cn/api/paas/v4', model: 'glm-4-air', hint: '智谱AI轻量文本模型' },
+  'qwen-turbo': { endpoint: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: 'qwen-turbo', hint: '阿里云百炼，有免费额度' },
+  'deepseek-chat': { endpoint: 'https://api.deepseek.com/v1', model: 'deepseek-chat', hint: 'DeepSeek，性价比高' },
+  'deepseek-v4-flash': { endpoint: 'https://api.deepseek.com/v1', model: 'deepseek-v4-flash', hint: 'DeepSeek V4 Flash' },
+  'doubao-pro-32k': { endpoint: 'https://ark.cn-beijing.volces.com/api/v3', model: 'doubao-pro-32k', hint: '火山引擎豆包文本模型' },
+};
+
+/* ---------- 通用大模型 HTTP 请求（基于 XHR，兼容 WebView file:// 上下文） ----------
+ * 背景：Android WebView 从 file:// 加载的页面发起 fetch 跨域请求时，
+ * 即使设置了 allowUniversalAccessFromFileURLs=true，fetch 仍可能被 CORS 拦截；
+ * 而 XMLHttpRequest 在 allowUniversalAccessFromFileURLs=true 下可绕过 CORS。
+ * 因此统一用 XHR 实现，连接测试与 OCR 识别共用。
+ * 返回 { ok, status, statusText, text }，超时抛 Error('timeout')。
+ */
+function llmHttpPost(url, headers, body, timeoutMs){
+  return new Promise((resolve, reject)=>{
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', url, true);
+    // 显式设置 Content-Type，确保服务端按 JSON 解析
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    if(headers){
+      for(const k in headers){
+        // XHR 不允许设置某些受保护头（如 Accept-Charset），跳过 Content-Type（已设置）
+        if(k.toLowerCase() === 'content-type') continue;
+        try{ xhr.setRequestHeader(k, headers[k]); }catch(e){ /* 受保护头忽略 */ }
+      }
+    }
+    xhr.timeout = timeoutMs || 30000;
+    xhr.ontimeout = ()=> reject(new Error('连接超时（请检查网络或 API 地址）'));
+    xhr.onerror = ()=>{
+      // XHR 在网络层失败（DNS、TLS、CORS 被拦截）时触发，无状态码
+      reject(new Error('网络请求失败（status=' + xhr.status + '）—— 可能是 API 地址错误、网络不通或被拦截'));
+    };
+    xhr.onload = ()=>{
+      resolve({
+        ok: xhr.status >= 200 && xhr.status < 300,
+        status: xhr.status,
+        statusText: xhr.statusText,
+        text: xhr.responseText
+      });
+    };
+    xhr.onabort = ()=> reject(new Error('请求已取消'));
+    xhr.send(body);
+  });
+}
+
+/* 判断是否为推理模型（推理模型会先生成 reasoning_content，需关闭 thinking 并回退读取） */
+function isLLMReasoningModel(model){
+  return /glm-?4\.5v|glm-?5|glm-4(\.\d)?-air|deepseek-r1|o1|o3|qwq|reason/i.test(model || '');
+}
+
+/* 默认顺风车账单识别提示词（严格 JSON） */
+
+/* ---------- 每公里电耗配置 ----------
+ * 利润 = 总里程 × 每公里电耗
+ * 默认 0.15 元/km，用户可在设置面板修改，存储于 localStorage。 */
+const POWER_COST_KEY = 'shunfeng_power_cost';
+const DEFAULT_POWER_COST = 0.15;
+function loadPowerCost(){
+  const v = parseFloat(localStorage.getItem(POWER_COST_KEY));
+  return (isNaN(v) || v < 0) ? DEFAULT_POWER_COST : v;
+}
+function savePowerCost(cost){
+  localStorage.setItem(POWER_COST_KEY, String(cost));
+}
+/* 计算利润：总收入 - 总里程 × 每公里电耗 */
+const calcProfit = (income, totalDistance) => income - totalDistance * loadPowerCost();
+const LLM_DEFAULT_PROMPT = `你是一个顺风车订单截图解析器。请仔细阅读图片内容，识别其中的顺风车订单信息，严格按照下面的 JSON Schema 返回一个 JSON 对象。不要返回多余解释、不要 Markdown、不要代码块，只返回 JSON 字符串。
+
+Schema（所有字段都是 string 类型，字段缺失或无法识别时用空字符串 ""，不要填 null）：
+{
+  "platform": "gaode | didi | \"\"",
+  "date": "YYYY-MM-DD（如图片中只有「今天」字样则结合上下文返回当天日期的格式，若无法确定则返回当天日期）",
+  "time": "HH:MM（24 小时制，无法识别则空）",
+  "amount": "行程总车费 = 乘客支付的总金额（包含了奖励在内，到手的全部收入），纯数字字符串，如 \"21.9\"；优先取「行程总车费」或截图中最大的那个金额",
+  "bonus": "奖励车费（是 amount 的一部分，并非额外叠加）。如截图写「含平台奖 3 元」，此处填 \"3\"；没有奖励则空字符串",
+  "pickup": "起点/上车点（完整地址或地点名，不要截断，不要省略号）",
+  "dropoff": "终点/下车点（完整地址或地点名，不要截断，不要省略号）",
+  "seats": "乘客人数，纯数字字符串，如 \"1\"、\"2\"；未知则空",
+  "rideType": "拼座类型：独享 或 拼座。不同平台显示不同（如「独享」「拼座」「拼车」「已拼1座」等），统一识别为 \"独享\" 或 \"拼座\"；无法判断则空字符串"
+}
+
+注意：
+- platform：图片中含「滴滴」「滴滴顺风车」「DIDI SHUNFENGCHE」「顺凤有你」→ "didi"；含「高德」「查看保单」「联系客服」「紧急求助」「终点附近单」→ "gaode"；不确定就空字符串。
+- amount：只提取数字，不要加货币符号、不要加「元」。优先取「行程总车费」字段，如果没有就找最大的金额。**amount 已经包含 bonus，不要再把 bonus 加到 amount 上。**
+- bonus：匹配「平台奖」「奖励已发」「其中X元奖励」「含平台奖」等字样的数字，没有就空字符串。bonus 是 amount 的一部分，不算额外收入。
+- date 格式强制：YYYY-MM-DD（带连字符）。若截图中无法找到明确日期，返回当天的日期。
+- pickup/dropoff：如果原截图用省略号，要根据上下文猜是哪个省/市/区/路/号，尽可能写出完整地址名；不确定就把你看到的原样照抄，不要猜得太离谱。
+- rideType：截图中显示「独享」或类似「未拼座」「1人专车」等 → "独享"；显示「拼座」「拼车」「已拼X座」等 → "拼座"；无法判断则空字符串。
+- 不要加额外字段（尤其不要加 distance 字段），不要解释，不要说你"无法识别"，就按上述规则输出 JSON。`;
+
+/* 识路模型默认提示词（可配置区域，默认河南省郑州市；会代入起点/终点/时间） */
+/* 识路模型默认提示词模板（含占位符，可直接填入设置输入框）：
+ * 占位符 ${region}/${pickup}/${dropoff}/${time} 会在估算时被替换为实际值。 */
+const ROUTE_DEFAULT_PROMPT_TEMPLATE = `你是一个熟悉\${region}地理的驾车路线估算助手。给定一单顺风车订单的起点、终点和出发时间，请估算实际驾车行驶里程和耗时。
+
+起点：\${pickup}
+终点：\${dropoff}
+出发时间：\${time}
+
+要求：
+1. 默认地点都在\${region}范围内理解。若某个地点名称模糊、在该区域存在多个同名或相似地点（例如"大学城""火车站""机场""客运站""二七广场"等），必须将 ambiguity 设为 true，并在 candidates 中给出 2~4 个最可能的明确地点，每个候选附带从"该候选起点到终点"的估算里程和耗时。
+2. distance_km 为估算的实际驾车里程（沿着城市道路/快速路/高速行驶的路程，不是两点间直线距离），保留 1 位小数。
+3. duration_min 为估算的实际驾车耗时（分钟），保留整数。
+4. 判断出发时间是否处于高峰期（工作日早高峰 7:00-9:00、晚高峰 17:00-19:00）。若处于高峰期，is_peak 为 true，peak_duration_min 填高峰期预估耗时；若非高峰期，is_peak 为 false，peak_duration_min 与 duration_min 相同。
+5. 若地点明确无歧义，ambiguity 为 false，candidates 为空数组。
+6. 若确实无法判断里程，distance_km 和 duration_min 填 null，ambiguity 为 false。
+
+只返回一个 JSON 对象，不要输出多余文本、不要 Markdown：
+{
+  "ambiguity": true或false,
+  "distance_km": 数字或null,
+  "duration_min": 数字或null,
+  "is_peak": true或false,
+  "peak_duration_min": 数字或null,
+  "note": "一句话说明估算依据，如\"走科学大道约35公里，预计40分钟\"",
+  "candidates": [
+    { "desc": "明确后的起终点描述，如：大学城(郑州高新区) → 郑州东站", "distance_km": 35.6, "duration_min": 40 }
+  ]
+}`;
+
+/* 基于模板生成识路提示词（带实际起终点/时间/区域） */
+const ROUTE_DEFAULT_PROMPT = (region, pickup, dropoff, time) =>
+  ROUTE_DEFAULT_PROMPT_TEMPLATE
+    .replace(/\$\{region\}/g, region)
+    .replace(/\$\{pickup\}/g, pickup)
+    .replace(/\$\{dropoff\}/g, dropoff)
+    .replace(/\$\{time\}/g, time || '未知');
+
+/* 设置面板：回填、保存、清空、预设模型一键填入（默认展开显示） */
+(function bindOcrSettings(){
+  // 回填（已迁移过：cfg.ocrKey/cfg.routeKey 等已存在）；
+  // 未自定义时，把内置默认提示词直接预填到输入框，方便用户查看与修改
+  const cfg = loadOcrCfg();
+  // 首次使用（未配置过）：自动选中带预填 Key 的预设模型
+  const ocrPresetObj = LLM_PRESETS['glm-4.6v'];
+  const routePresetObj = ROUTE_PRESETS['deepseek-v4-flash'];
+  $('#ocrKey').value = cfg.ocrKey || '';
+  $('#ocrEndpoint').value = cfg.ocrEndpoint || (ocrPresetObj && ocrPresetObj.endpoint) || '';
+  $('#ocrModel').value = cfg.ocrModel || (ocrPresetObj && ocrPresetObj.model) || '';
+  $('#ocrPrompt').value = cfg.ocrPrompt || LLM_DEFAULT_PROMPT;
+  $('#routeKey').value = cfg.routeKey || '';
+  $('#routeEndpoint').value = cfg.routeEndpoint || (routePresetObj && routePresetObj.endpoint) || '';
+  $('#routeModel').value = cfg.routeModel || (routePresetObj && routePresetObj.model) || '';
+  $('#routePrompt').value = cfg.routePrompt || ROUTE_DEFAULT_PROMPT_TEMPLATE;
+  $('#routeRegion').value = cfg.routeRegion || '';
+  // 回填预设下拉框选中项
+  if(cfg.ocrModel === 'glm-4.6v') $('#ocrPreset').value = 'glm-4.6v';
+  if(cfg.routeModel === 'deepseek-v4-flash') $('#routePreset').value = 'deepseek-v4-flash';
+
+  // 识图预设模型一键填入
+  $('#ocrPreset').addEventListener('change', e=>{
+    const key = e.target.value;
+    if(!key || !LLM_PRESETS[key]) return;
+    const p = LLM_PRESETS[key];
+    $('#ocrEndpoint').value = p.endpoint;
+    $('#ocrModel').value = p.model;
+  });
+
+  // 识路预设模型一键填入
+  $('#routePreset').addEventListener('change', e=>{
+    const key = e.target.value;
+    if(!key || !ROUTE_PRESETS[key]) return;
+    const p = ROUTE_PRESETS[key];
+    $('#routeEndpoint').value = p.endpoint;
+    $('#routeModel').value = p.model;
+  });
+
+  // 保存（统一保存识图 + 识路全部字段）
+  $('#ocrBaiduSave').addEventListener('click', ()=>{
+    const ocrKey = $('#ocrKey').value.trim();
+    const ocrEndpoint = $('#ocrEndpoint').value.trim().replace(/\/+$/, '');
+    const ocrModel = $('#ocrModel').value.trim();
+    const ocrPrompt = $('#ocrPrompt').value.trim();
+    const routeKey = $('#routeKey').value.trim();
+    const routeEndpoint = $('#routeEndpoint').value.trim().replace(/\/+$/, '');
+    const routeModel = $('#routeModel').value.trim();
+    const routePrompt = $('#routePrompt').value.trim();
+    const routeRegion = $('#routeRegion').value.trim();
+    saveOcrCfg({ ocrKey, ocrEndpoint, ocrModel, ocrPrompt, routeKey, routeEndpoint, routeModel, routePrompt, routeRegion });
+    toast('识图 + 识路设置已保存');
+  });
+
+  // 清空（同时清空识图 + 识路全部字段）
+  $('#ocrBaiduClear').addEventListener('click', ()=>{
+    ['ocrKey','ocrEndpoint','ocrModel','ocrPrompt','ocrPreset',
+     'routeKey','routeEndpoint','routeModel','routePrompt','routeRegion','routePreset'].forEach(id=>{
+      const el = document.getElementById(id); if(el) el.value = '';
+    });
+    localStorage.removeItem(OCR_CFG_KEY);
+    $('#ocrTestResult').innerHTML = '';
+    $('#routeTestResult').innerHTML = '';
+    toast('已清空识图 + 识路设置');
+  });
+
+  // 通用连接测试：用当前表单值发一次极小的文本请求，验证 Key / Endpoint / Model 是否可用
+  async function testLlmConn(key, endpointBase, model, box){
+    if(!key || !endpointBase || !model){
+      box.innerHTML = '<span style="color:var(--red);">⚠️ 请先填写 API Key、API 地址、模型名称</span>';
+      return;
+    }
+    // 端点校验：常见误填是把 /chat/completions 也带上，导致拼接成 .../chat/completions/chat/completions
+    if(/\/chat\/completions$/i.test(endpointBase)){
+      box.innerHTML = '<span style="color:var(--red);">❌ API 地址末尾不要带 /chat/completions，只需填到 /v4 或 /v1 这一级</span>';
+      return;
+    }
+    box.innerHTML = '<span style="color:var(--muted);">⏳ 正在测试连接…</span>';
+    try{
+      // GLM-5.x 等推理模型会先生成 reasoning_content 再生成 content，
+      // 小 max_tokens 下 content 必为空。用 thinking:disabled 关闭推理，得到干净文本。
+      const payload = {
+        model: model,
+        temperature: 0,
+        max_tokens: 16,
+        messages: [{ role: 'user', content: 'hi' }]
+      };
+      if(isLLMReasoningModel(model)) payload.thinking = { type: 'disabled' };
+      // 用 XHR 而非 fetch：Android WebView file:// 下 fetch 跨域会被 CORS 拦截，
+      // 而 XHR 在 allowUniversalAccessFromFileURLs=true 下可正常跨域。
+      const r = await llmHttpPost(
+        endpointBase + '/chat/completions',
+        { 'Authorization': 'Bearer ' + key },
+        JSON.stringify(payload),
+        25000
+      );
+      const text = r.text;
+      if(r.ok){
+        let raw = '', reasoning = '';
+        try{
+          const msg = JSON.parse(text).choices?.[0]?.message || {};
+          raw = msg.content || '';
+          reasoning = msg.reasoning_content || '';
+        }catch(e){}
+        const display = raw || (reasoning ? '(推理中) ' + reasoning.slice(0,40) : '(空)');
+        box.innerHTML = '<span style="color:var(--green, #2E8B7E);">✅ 连接成功！模型可用，响应：' +
+          display + '</span>';
+      }else{
+        let msg = 'HTTP ' + r.status;
+        try{ const j = JSON.parse(text); msg += '：' + (j.error && (j.error.message || j.error) || ''); }catch(e){}
+        box.innerHTML = '<span style="color:var(--red);">❌ 连接失败：' + msg + '</span>';
+      }
+    }catch(e){
+      const msg = e && e.message || String(e);
+      box.innerHTML = '<span style="color:var(--red);">❌ 连接失败：' + msg + '</span>';
+    }
+  }
+
+  // 识图模型连接测试
+  $('#ocrTestConn').addEventListener('click', ()=>{
+    testLlmConn(
+      $('#ocrKey').value.trim(),
+      $('#ocrEndpoint').value.trim().replace(/\/+$/, ''),
+      $('#ocrModel').value.trim(),
+      $('#ocrTestResult')
+    );
+  });
+
+  // 识路模型连接测试
+  $('#routeTestConn').addEventListener('click', ()=>{
+    testLlmConn(
+      $('#routeKey').value.trim(),
+      $('#routeEndpoint').value.trim().replace(/\/+$/, ''),
+      $('#routeModel').value.trim(),
+      $('#routeTestResult')
+    );
+  });
+})();
+
+/* ---------- 大模型视觉识别（OpenAI 兼容多模态 → JSON） ---------- */
+async function ocrByLLM(dataUrl, onProgress){
+  const cfg = loadOcrCfg();
+  const endpoint = (cfg.ocrEndpoint || '').replace(/\/+$/, '');
+  const model = cfg.ocrModel || '';
+  const key = cfg.ocrKey || '';
+  if(!endpoint || !model || !key) throw new Error('识图大模型 Key/Endpoint/Model 未配置，请先设置');
+  onProgress && onProgress(0.15, '连接大模型…');
+  const prompt = (cfg.ocrPrompt || '').trim() || LLM_DEFAULT_PROMPT;
+  const body = {
+    model: model,
+    temperature: 0,
+    response_format: { type: 'json_object' },
+    messages: [
+      { role: 'system', content: '你是一个严谨的顺风车订单截图解析器，只返回 JSON，不输出任何多余文本。' },
+      {
+        role: 'user',
+        content: [
+          { type: 'text', text: prompt },
+          { type: 'image_url', image_url: { url: dataUrl, detail: 'high' } }
+        ]
+      }
+    ]
+  };
+  // 推理视觉模型（如 glm-4.5v）会先生成 reasoning_content 再生成 content，
+  // 关闭推理可让模型直接返回 JSON，避免 content 为空导致解析失败。
+  if(isLLMReasoningModel(model)) body.thinking = { type: 'disabled' };
+  onProgress && onProgress(0.35, '请求大模型分析图片（约 5-15 秒）…');
+  // 用 XHR 而非 fetch：Android WebView file:// 下 fetch 跨域会被 CORS 拦截
+  const r = await llmHttpPost(
+    endpoint + '/chat/completions',
+    { 'Authorization': 'Bearer ' + key },
+    JSON.stringify(body),
+    120000
+  );
+  const respText = r.text;
+  if(!r.ok){
+    let msg = 'HTTP ' + r.status;
+    try{ const j = JSON.parse(respText); msg += '：' + (j.error && (j.error.message || j.error) || ''); }catch(e){}
+    throw new Error(msg);
+  }
+  onProgress && onProgress(0.8, '解析返回 JSON…');
+  let data;
+  try{ data = JSON.parse(respText); }catch(e){ throw new Error('返回不是合法 JSON：' + respText.slice(0,80)); }
+  let raw = '';
+  try{
+    // 优先取 content；推理模型在 thinking 未关闭时 content 可能为空，
+    // 此时回退到 reasoning_content（其中可能已包含 JSON）。
+    const msg = data.choices[0].message;
+    raw = msg.content || msg.reasoning_content || '';
+  }catch(e){ throw new Error('返回结构不含 choices[0].message.content'); }
+  const json = extractLLMJson(raw);
+  if(!json) throw new Error('未从返回中提取到 JSON');
+  const parsed = normalizeLLMResult(json);
+  // 把大模型生成的原始字符串也塞到 ocrRaw 里方便用户核
+  ocrRaw.textContent = '【大模型 JSON 输出】\n' + JSON.stringify(json, null, 2) + '\n\n【归一化后】\n' + JSON.stringify(parsed, null, 2);
+  return { __llm: true, ...parsed };
+}
+
+/* 从大模型输出中提取 JSON（兼容 ```json 围栏 / 多段 JSON） */
+function extractLLMJson(raw){
+  if(!raw) return null;
+  // 1. 直接尝试 parse
+  try{ return JSON.parse(raw); }catch(e){}
+  // 2. ```json ... ```
+  const m1 = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if(m1){ try{ return JSON.parse(m1[1].trim()); }catch(e){} }
+  // 3. 找到最外层的 { ... }
+  const start = raw.indexOf('{');
+  const end = raw.lastIndexOf('}');
+  if(start >= 0 && end > start){
+    try{ return JSON.parse(raw.slice(start, end+1)); }catch(e){}
+  }
+  return null;
+}
+
+/* 把大模型返回的 JSON 规范化为 parseReceiptText 同构结构 */
+function normalizeLLMResult(j){
+  const pick = k => {
+    let v = j[k];
+    if(v === null || v === undefined) v = '';
+    v = String(v).trim();
+    // 去掉 "元" "¥" "￥" 等
+    if(['amount','bonus'].includes(k)) v = v.replace(/[¥￥元,，\s]/g, '');
+    return v;
+  };
+  let platform = (pick('platform') || '').toLowerCase();
+  if(platform !== 'gaode' && platform !== 'didi') platform = '';
+  // 日期强制 YYYY-MM-DD
+  let date = pick('date');
+  if(/^\d{4}[-\/\.年]\d{1,2}[-\/\.月]\d{1,2}/.test(date)){
+    const m = date.match(/^(\d{4})[-\/\.年](\d{1,2})[-\/\.月](\d{1,2})/);
+    if(m) date = `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
+  }else if(/今天|今日/.test(date) || !date){
+    date = date; // 保留原值，apply 端会兜底用今日
+  }
+  let time = pick('time');
+  if(time){
+    const m = time.match(/(\d{1,2}):(\d{2})/);
+    if(m) time = `${m[1].padStart(2,'0')}:${m[2]}`;
+  }
+  // 拼座类型：归一化为 独享 / 拼座，无法判断则空
+  let rideType = pick('rideType');
+  if(/独享|未拼座|1人专车|专车/.test(rideType)) rideType = '独享';
+  else if(/拼座|拼车|已拼/.test(rideType)) rideType = '拼座';
+  else rideType = '';
+  // 补 missing
+  const missing = [
+    !platform && '平台',
+    !pick('amount') && '金额',
+    !pick('pickup') && '起点',
+    !pick('dropoff') && '终点'
+  ].filter(Boolean).join('、') || '—';
+  return {
+    platform,
+    platformLabel: platform === 'gaode' ? '高德顺风车' : platform === 'didi' ? '滴滴顺风车' : '未识别，请手动选',
+    date,
+    time,
+    amount: pick('amount'),
+    bonus: pick('bonus'),
+    pickup: pick('pickup'),
+    dropoff: pick('dropoff'),
+    rideType,
+    seats: pick('seats') || '—',
+    missing
+  };
+}
+
+/* ---------- 识别调度：识图大模型识别截图，识路大模型可选估算里程/耗时 ---------- */
+async function runTesseract(dataUrl){
+  const cfg = loadOcrCfg();
+  // 识图模型必须配置；识路模型可选（未配置时跳过估算，里程/耗时由用户手动填写）
+  const hasOcr = !!(cfg.ocrKey && cfg.ocrEndpoint && cfg.ocrModel);
+  const hasRoute = !!(cfg.routeKey && cfg.routeEndpoint && cfg.routeModel);
+  if(!hasOcr){
+    // 未配置：留在识别面板内，展示「去设置识图大模型 API」入口
+    setStep(1);
+    ocrFill.style.width = '5%';
+    ocrTip.textContent = '未配置识图大模型 API，无法识别';
+    $('#ocrNoConfig').classList.remove('hidden');
+    return;
+  }
+  $('#ocrNoConfig').classList.add('hidden');
+  try{
+    setStep(1); ocrFill.style.width='10%'; ocrTip.textContent='准备识别…';
+    setStep(2);
+    const parsed = await ocrByLLM(dataUrl, (p,msg)=>{
+      ocrFill.style.width = (15 + p*80) + '%';
+      if(p > 0.2) setStep(3);
+      if(msg) ocrTip.textContent = msg;
+    });
+    if(!parsed || !(parsed.amount || parsed.pickup || parsed.dropoff)) throw new Error('识图大模型未提取到订单字段');
+    setStep(4); ocrFill.style.width='100%'; ocrTip.textContent='解析订单信息…';
+    // 识路未配置时，预览中里程/耗时显示提示文案，由 estimateRouteIntoReview 内部处理
+    if(!hasRoute){
+      parsed.distance = null;
+      parsed.duration = null;
+    }
+    showOcrReview(parsed);
+  }catch(e){
+    const msg = e && e.message ? e.message : String(e);
+    console.warn('[LLM-OCR] 失败:', msg);
+    toast('识别失败：' + msg + '（建议检查识图大模型 Key / 地址 / 模型配置是否正确）', 'err');
+    resetOcrAndClose();
+  }
+}
+
+/* ---------- 输入法弹出时自动滚动聚焦输入框到可见区域 ---------- */
+if(window.visualViewport){
+  window.visualViewport.addEventListener('resize', ()=>{
+    const el = document.activeElement;
+    if(!el || el === document.body) return;
+    if(el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT'){
+      const rect = el.getBoundingClientRect();
+      const vv = window.visualViewport;
+      // 输入框底部是否在可视区域之下（被键盘遮挡）
+      if(rect.bottom > vv.height){
+        el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      }
+    }
+  });
+}
+
+/* ---------- Init ---------- */
+function init(){
+  // 版本号同步（若原生 Android 注入了 __appVersion，则以原生为准）
+  const ver = (window.__appVersion || APP_VERSION || '').trim();
+  if(ver){
+    const v = 'v' + ver.replace(/^v/, '');
+    document.title = `顺风·账本 ${v}`;
+  }
+  renderToday();
+  refresh();
+}
+init();
+</script>
+</body>
+</html>

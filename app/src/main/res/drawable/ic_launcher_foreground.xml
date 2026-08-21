@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- 金币主体 -->
+    <path
+        android:pathData="M54,46 m-24,0 a24,24 0,1 1,48 0 a24,24 0,1 1,-48 0"
+        android:fillColor="#E6A823"/>
+    <path
+        android:pathData="M54,46 m-24,0 a24,24 0,1 1,48 0 a24,24 0,1 1,-48 0"
+        android:fillColor="#00000000"
+        android:strokeColor="#B07A0E"
+        android:strokeWidth="2.5"/>
+    <!-- 内环虚线（路由环） -->
+    <path
+        android:pathData="M54,46 m-14,0 a14,14 0,1 1,0 28 a14,14 0,1 1,0 -28"
+        android:fillColor="#00000000"
+        android:strokeColor="#2A231E"
+        android:strokeWidth="2.6"
+        android:strokeLineCap="round"/>
+    <!-- 上半路线弧 -->
+    <path
+        android:pathData="M40,42 a14,14 0 0,1 28,0"
+        android:fillColor="#00000000"
+        android:strokeColor="#2A231E"
+        android:strokeWidth="2.6"
+        android:strokeLineCap="round"/>
+    <!-- 方向箭头 -->
+    <path
+        android:pathData="M60,31 L66,38 L61,42"
+        android:fillColor="#00000000"
+        android:strokeColor="#2A231E"
+        android:strokeWidth="2.4"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+    <!-- 账本横线 -->
+    <path
+        android:pathData="M34,78 L74,78"
+        android:fillColor="#00000000"
+        android:strokeColor="#A8760A"
+        android:strokeWidth="3.4"
+        android:strokeLineCap="round"/>
+    <path
+        android:pathData="M40,84 L68,84"
+        android:fillColor="#00000000"
+        android:strokeColor="#9B8E7E"
+        android:strokeWidth="2.6"
+        android:strokeLineCap="round"/>
+</vector>

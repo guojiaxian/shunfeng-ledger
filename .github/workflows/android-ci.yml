@@ -1,0 +1,43 @@
+name: Android CI
+
+on:
+  push:
+    branches: [ "main" ]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      # 使用环境变量注入签名信息（密码不写入仓库）
+      # 在 GitHub 仓库 Settings -> Secrets 中配置 SHUNFENG_STORE_PASSWORD / SHUNFENG_KEY_PASSWORD，
+      # 并在本地配置 ~/.gradle/gradle.properties 中提供同名属性
+      - name: Build Release APK
+        run: ./gradlew assembleRelease
+        env:
+          SHUNFENG_STORE_PASSWORD: ${{ secrets.SHUNFENG_STORE_PASSWORD }}
+          SHUNFENG_KEY_PASSWORD: ${{ secrets.SHUNFENG_KEY_PASSWORD }}
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release
+          path: app/build/outputs/apk/release/*.apk

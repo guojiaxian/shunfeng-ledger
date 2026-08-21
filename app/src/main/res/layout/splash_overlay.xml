@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Activity 层的 Splash Overlay：在 SplashScreen API 退场后、WebView 加载完成前继续显示，
+     防止中间出现 1s 空白。覆盖全屏，包含居中 Logo + 品牌名。
+     注：系统 SplashScreen 仅显示 Logo + 背景，App 名称与副标题都在此 Overlay 中渲染，
+     并设置了最短显示时长（900ms），保证用户能看到完整启动页。 -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/splashOverlay"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FBF9F3">
+
+    <!-- 居中 Logo + 标题 + 副标题容器 -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:orientation="vertical"
+        android:gravity="center_horizontal">
+
+        <!-- Logo 图标（金币账本）：加大尺寸以便与 App 名平衡 -->
+        <ImageView
+            android:layout_width="104dp"
+            android:layout_height="104dp"
+            android:layout_gravity="center_horizontal"
+            android:src="@mipmap/ic_launcher"
+            android:scaleType="fitCenter"
+            android:adjustViewBounds="true"
+            android:contentDescription="@string/app_name" />
+
+        <!-- App 名称：顺风·账本：大字突出，与 Logo 间距合理 -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="22dp"
+            android:text="@string/app_name"
+            android:textColor="#2A231E"
+            android:textSize="26sp"
+            android:textStyle="bold"
+            android:includeFontPadding="false"
+            android:singleLine="true" />
+
+        <!-- 副标题：温暖的金色分割线 + 文字 -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+            <ImageView
+                android:layout_width="28dp"
+                android:layout_height="1dp"
+                android:src="@drawable/splash_divider"
+                android:scaleType="fitXY"
+                android:contentDescription="@null" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:layout_marginEnd="10dp"
+                android:text="每一笔 都算数"
+                android:textColor="#9B8E7E"
+                android:textSize="14sp"
+                android:singleLine="true" />
+            <ImageView
+                android:layout_width="28dp"
+                android:layout_height="1dp"
+                android:src="@drawable/splash_divider"
+                android:scaleType="fitXY"
+                android:contentDescription="@null" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- 底部版权 / 版本占位 -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="40dp"
+        android:textColor="#B8AE9E"
+        android:textSize="11sp"
+        android:text="Shunfeng Ledger"
+        android:singleLine="true" />
+</FrameLayout>
