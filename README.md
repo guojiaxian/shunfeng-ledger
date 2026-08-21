@@ -42,23 +42,26 @@
 | 🔌 **连接测试** | 设置页内一键测试模型连通性 |
 
 ## 📱 应用截图
+<p align="center">
+  <img src="docs/screenshots/screen-6-settings.jpg" width="30%" alt="首页展示" />
+  <img src="docs/screenshots/screen-5-calendar.jpg" width="30%" alt="订单列表" />&nbsp;
+  <img src="docs/screenshots/screen-4-stats.jpg" width="30%" alt="日历视图" />&nbsp;
+ </p>
 
 <p align="center">
-  <img src="docs/screenshots/screen-1-home.jpg" width="30%" alt="首页看板" />&nbsp;
-  <img src="docs/screenshots/screen-2-records.jpg" width="30%" alt="订单列表" />&nbsp;
-  <img src="docs/screenshots/screen-3-recognition.jpg" width="30%" alt="智能识别" />
-</p>
+  <sub>首页展示&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;订单列表&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;日历视图</sub>
+  
 <p align="center">
-  <sub>首页看板&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;订单列表&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;智能识别</sub>
+  <img src="docs/screenshots/screen-1-home.jpg" width="30%" alt="数据统计" />&nbsp;
+  <img src="docs/screenshots/screen-2-records.jpg" width="30%" alt="平台对比" />&nbsp;
+  <img src="docs/screenshots/screen-3-recognition.jpg" width="30%" alt="统计看板" />
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/screen-4-stats.jpg" width="30%" alt="数据统计" />&nbsp;
-  <img src="docs/screenshots/screen-5-calendar.jpg" width="30%" alt="日历视图" />&nbsp;
-  <img src="docs/screenshots/screen-6-settings.jpg" width="30%" alt="设置与模型" />
+  <sub>数据统计&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;平台对比&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;统计看板</sub>
 </p>
-<p align="center">
-  <sub>数据统计&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;日历视图&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;设置与模型</sub>
+
+
 </p>
 
 ## 🛠️ 技术栈
