@@ -83,10 +83,19 @@ crontab -e
 
 ## 6. 常用运维
 
+也可以用管理脚本（已随服务端文件一起上传）：
+
+```bash
+chmod +x /root/shunfeng-ledger/sf.sh
+/root/shunfeng-ledger/sf.sh start | stop | restart | status | logs | enable | disable
+```
+
+或直接用 systemctl：
+
 ```bash
 systemctl restart shunfeng-ledger        # 重启
 systemctl stop shunfeng-ledger           # 停止
-ls -lt /root/shunfeng-ledger/backups/     # 查看备份
+ls -lt /root/shunfeng-ledger/backups/    # 查看备份
 sqlite3 /root/shunfeng-ledger/shunfeng-ledger.db "select rev, updated_at, length(data) from ledger"
 ```
 
