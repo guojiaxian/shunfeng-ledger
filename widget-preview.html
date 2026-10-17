@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<title>小组件布局预览</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #1a1a2e;
+    padding: 40px;
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    color: #fff;
+  }
+  h1 { font-size: 20px; margin-bottom: 8px; }
+  .desc { font-size: 13px; color: #aaa; margin-bottom: 24px; }
+  .compare {
+    display: flex;
+    gap: 40px;
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+  .section h2 {
+    font-size: 15px;
+    margin-bottom: 12px;
+    color: #ccc;
+  }
+  /* ====== 模拟桌面小组件容器 ====== */
+  /* 4列 x 2行，每格约70dp x 70dp，约 280x140dp */
+  .widget-wrap {
+    width: 336px;  /* 280dp * 1.2 scale，方便看 */
+    height: 168px; /* 140dp * 1.2 */
+    background: #FBF9F3;
+    border-radius: 34px;
+    border: 1px solid #D6CFC0;
+    padding: 16px;
+    display: flex;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  }
+
+  /* ====== 左侧 60% ====== */
+  .left {
+    flex: 1.5;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;  /* 关键：垂直分布填满 */
+    padding-right: 12px;
+  }
+  .right {
+    flex: 1;
+    border-left: 1px solid #E4D9C2;
+    padding-left: 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;  /* 关键：垂直分布填满 */
+  }
+
+  /* ====== 旧版（当前版）样式 ====== */
+  .old .header-row { margin-bottom: 2px; }
+  .old .app-title { font-size: 13px; font-weight: 700; color: #2A231E; }
+  .old .date { font-size: 11px; color: #9B8E7E; margin-left: 7px; }
+  .old .income-label { font-size: 11px; color: #9B8E7E; margin-bottom: 1px; margin-top: 2px; }
+  .old .amount-row { align-items: flex-end; display: flex; }
+  .old .yuan { font-size: 16px; font-weight: 700; color: #D49815; }
+  .old .amt-int { font-size: 29px; font-weight: 700; color: #D49815; line-height: 1; }
+  .old .amt-dec { font-size: 17px; font-weight: 700; color: #6E6357; line-height: 1; padding-bottom: 3px; }
+  .old .sub-row { margin-top: 2px; display: flex; align-items: center; gap: 8px; }
+  .old .sub-text { font-size: 12px; color: #6E6357; }
+  .old .dot { font-size: 12px; color: #B8AE9E; }
+  .old .badge {
+    margin-top: 3px;
+    padding: 2px 6px;
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 6px;
+    background: rgba(107,158,94,0.12);
+    color: #6B9E5E;
+    display: inline-block;
+    align-self: flex-start;
+  }
+  .old .order-header { display: flex; align-items: center; margin-bottom: 4px; }
+  .old .order-title { flex: 1; font-size: 11px; color: #9B8E7E; }
+  .old .order-all { font-size: 11px; color: #B8AE9E; }
+  .old .order-row { display: flex; align-items: center; margin-bottom: 3px; }
+  .old .order-dot { width: 9px; height: 9px; border-radius: 50%; background: #B8AE9E; flex-shrink: 0; }
+  .old .dot-green { background: #2E8B7E; }
+  .old .dot-orange { background: #D9682A; }
+  .old .order-route { flex: 1; margin-left: 7px; font-size: 12px; color: #2A231E; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .old .order-amt { margin-left: 5px; font-size: 12px; color: #D49815; font-weight: 700; }
+
+  /* ====== 新版（优化版）样式 ====== */
+  .new .header-row { display: flex; align-items: center; }
+  .new .app-title { font-size: 16px; font-weight: 700; color: #2A231E; letter-spacing: 0.5px; }
+  .new .date { font-size: 12px; color: #9B8E7E; margin-left: 10px; }
+  .new .income-label { font-size: 12px; color: #9B8E7E; }
+  .new .amount-row { align-items: flex-end; display: flex; }
+  .new .yuan { font-size: 20px; font-weight: 700; color: #D49815; margin-bottom: 1px; }
+  .new .amt-int { font-size: 38px; font-weight: 800; color: #D49815; line-height: 0.95; letter-spacing: -0.5px; }
+  .new .amt-dec { font-size: 22px; font-weight: 700; color: #6E6357; line-height: 0.95; padding-bottom: 4px; }
+  .new .sub-row { margin-top: 4px; display: flex; align-items: center; gap: 10px; }
+  .new .sub-text { font-size: 13px; color: #6E6357; font-weight: 500; }
+  .new .dot { font-size: 13px; color: #B8AE9E; }
+  .new .badge {
+    padding: 3px 8px;
+    font-size: 12px;
+    font-weight: 700;
+    border-radius: 8px;
+    background: rgba(107,158,94,0.15);
+    color: #6B9E5E;
+    display: inline-block;
+    align-self: flex-start;
+  }
+  .new .order-header { display: flex; align-items: center; }
+  .new .order-title { flex: 1; font-size: 12px; color: #9B8E7E; font-weight: 500; }
+  .new .order-all { font-size: 12px; color: #B8AE9E; font-weight: 500; }
+  .new .order-row { display: flex; align-items: center; }
+  .new .order-dot { width: 10px; height: 10px; border-radius: 50%; background: #B8AE9E; flex-shrink: 0; }
+  .new .dot-green { background: #2E8B7E; }
+  .new .dot-orange { background: #D9682A; }
+  .new .order-route { flex: 1; margin-left: 8px; font-size: 13px; color: #2A231E; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-weight: 500; }
+  .new .order-amt { margin-left: 6px; font-size: 14px; color: #D49815; font-weight: 700; }
+
+  /* 间距标注 */
+  .space-between {
+    border: 1px dashed #4CAF50;
+  }
+  .label-box {
+    text-align: center;
+    margin-top: 8px;
+    font-size: 12px;
+    color: #888;
+  }
+  .old { outline: 1px dashed #ef5350; outline-offset: -1px; }
+  .new { outline: 1px dashed #4CAF50; outline-offset: -1px; }
+
+  .size-note {
+    margin-top: 8px;
+    font-size: 11px;
+    color: #666;
+    text-align: center;
+  }
+  .legend {
+    margin-top: 16px;
+    padding: 12px 16px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 10px;
+    font-size: 12px;
+    line-height: 1.8;
+  }
+  .legend .ok { color: #4CAF50; }
+  .legend .bad { color: #ef5350; }
+</style>
+</head>
+<body>
+
+<h1>🪟 小组件布局预览 — 旧版 vs 优化版</h1>
+<p class="desc">尺寸：4列 × 2行（约 280×140dp，图中放大 1.2 倍便于观察）</p>
+
+<div class="compare">
+  <!-- 旧版 -->
+  <div class="section">
+    <h2>❌ 旧版（当前效果，对应你截图）</h2>
+    <div class="widget-wrap old">
+      <div class="left">
+        <div>
+          <div class="header-row">
+            <span class="app-title">顺风·账本</span>
+            <span class="date">8月5日 周三</span>
+          </div>
+          <div class="income-label">今日收入</div>
+          <div class="amount-row">
+            <span class="yuan">¥</span>
+            <span class="amt-int">43</span>
+            <span class="amt-dec">.54</span>
+          </div>
+          <div class="sub-row">
+            <span class="sub-text">3 单</span>
+            <span class="dot">·</span>
+            <span class="sub-text">客单价 ¥15</span>
+          </div>
+          <span class="badge">今日 3 单</span>
+        </div>
+      </div>
+      <div class="right">
+        <div>
+          <div class="order-header">
+            <span class="order-title">今日订单</span>
+            <span class="order-all">全部 →</span>
+          </div>
+          <div class="order-row">
+            <div class="order-dot dot-orange"></div>
+            <div class="order-route">博览路/青年……</div>
+            <div class="order-amt">¥13</div>
+          </div>
+          <div class="order-row" style="margin-top:3px">
+            <div class="order-dot dot-green"></div>
+            <div class="order-route">三厂烩羊肉(……</div>
+            <div class="order-amt">¥15</div>
+          </div>
+          <div class="order-row" style="margin-top:3px">
+            <div class="order-dot dot-green"></div>
+            <div class="order-route">碧桂西流湖……</div>
+            <div class="order-amt">¥16</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="size-note">
+      🔴 <b>问题：</b> 底部约 40% 空白，文字偏小，内容集中在顶部
+    </div>
+  </div>
+
+  <!-- 优化版 -->
+  <div class="section">
+    <h2>✅ 优化版（建议效果）</h2>
+    <div class="widget-wrap new">
+      <div class="left">
+        <div>
+          <div class="header-row">
+            <span class="app-title">顺风·账本</span>
+            <span class="date">8月5日 周三</span>
+          </div>
+        </div>
+        <div style="margin-top: 2px">
+          <div class="income-label">今日收入</div>
+          <div class="amount-row">
+            <span class="yuan">¥</span>
+            <span class="amt-int">43</span>
+            <span class="amt-dec">.54</span>
+          </div>
+        </div>
+        <div>
+          <div class="sub-row">
+            <span class="sub-text">3 单</span>
+            <span class="dot">·</span>
+            <span class="sub-text">客单价 ¥15</span>
+          </div>
+          <span class="badge" style="margin-top: 6px">今日 3 单</span>
+        </div>
+      </div>
+      <div class="right">
+        <div class="order-header">
+          <span class="order-title">今日订单</span>
+          <span class="order-all">全部 →</span>
+        </div>
+        <div class="order-row">
+          <div class="order-dot dot-orange"></div>
+          <div class="order-route">博览路/青年……</div>
+          <div class="order-amt">¥13</div>
+        </div>
+        <div class="order-row">
+          <div class="order-dot dot-green"></div>
+          <div class="order-route">三厂烩羊肉(……</div>
+          <div class="order-amt">¥15</div>
+        </div>
+        <div class="order-row">
+          <div class="order-dot dot-green"></div>
+          <div class="order-route">碧桂西流湖……</div>
+          <div class="order-amt">¥16</div>
+        </div>
+      </div>
+    </div>
+    <div class="size-note">
+      🟢 <b>改动：</b> padding 增大，字体整体放大，<code>space-between</code> 垂直填满
+    </div>
+  </div>
+</div>
+
+<div class="legend">
+  <div class="bad"><b>旧版问题：</b></div>
+  <div>• padding 只有 14dp → 内容四周留白过多</div>
+  <div>• 左侧面板是一个容器，内容全堆在顶部 → 底部大片空白</div>
+  <div>• 右侧订单列表同理，3 条订单挤在最上面 → 下方空白</div>
+  <div>• 主金额只有 24sp，订单行 10sp → 字号偏小</div>
+  <br>
+  <div class="ok"><b>优化方案：</b></div>
+  <div>• padding 14dp → 18dp（更紧贴外框）</div>
+  <div>• 左侧/右侧容器改用 <b>space-between</b> 垂直分布：头部-主体-底部分开</div>
+  <div>• 主金额：24sp → <b>32sp</b>（约放大 33%），¥符号 13→17sp</div>
+  <div>• 标题：11sp → 13sp，日期 9→11sp，标签 9→11sp</div>
+  <div>• 次级指标（3单/客单价）：10sp → 12sp</div>
+  <div>• 订单列表文字：10sp → 12sp，金额 10→13sp，圆点 8→10dp</div>
+  <div>• 订单行间距 3dp → 4dp，分布更舒展</div>
+</div>
+
+</body>
+</html>

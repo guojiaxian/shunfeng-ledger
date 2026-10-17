@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<paths>
-    <!-- 分享截图缓存目录：cachePath 必须与代码中 getExternalCacheDir() 一致 -->
-    <external-cache-path name="share_images" path="share/" />
-    <!-- 兜底：内部 cache 也允许（部分 ROM cache 路径不同） -->
-    <cache-path name="cache_images" path="share/" />
-</paths>

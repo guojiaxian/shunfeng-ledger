@@ -1,0 +1,71 @@
+{
+  "project_root": "/root/shunfeng-ledger",
+  "project_name": "shunfeng-ledger",
+  "software_name_candidate": "shunfeng ledger",
+  "package": {
+    "name": "",
+    "path": "",
+    "version": "V1.0",
+    "scripts": {},
+    "dependency_names": []
+  },
+  "frameworks": [],
+  "language": "JavaScript、Python、Kotlin",
+  "source": {
+    "file_count": 23,
+    "line_count": 30746,
+    "total_file_count": 23,
+    "total_line_count": 30746,
+    "extension_counts": {
+      ".html": 6,
+      ".js": 4,
+      ".json": 7,
+      ".kt": 3,
+      ".py": 3
+    },
+    "category_counts": {
+      "page": 4,
+      "source": 19
+    },
+    "categorized_files": {
+      "page": [
+        "android-app/app/src/main/assets/index.html",
+        "android-app/app/src/main/java/com/shunfeng/ledger/MainActivity.kt",
+        "android-app/app/src/main/java/com/shunfeng/ledger/OcrEngine.kt",
+        "android-app/app/src/main/java/com/shunfeng/ledger/TodayWidgetProvider.kt"
+      ],
+      "source": [
+        "index.html",
+        "preview-stats.html",
+        "widget-preview.html",
+        "shunfeng-ledger-2026-09-04.json",
+        "recalc-2026-09-04.js",
+        "shunfeng-ledger-2026-09-04-recalc.json",
+        "geocode-preview.py",
+        "geocode-cache-2026-09-04.json",
+        "build-viz-data.py",
+        "viz-data-2026-09-04.js",
+        "map-proj.json",
+        "preview-viz.html",
+        "shunfeng-ledger-2026-09-04-new.json",
+        "recalc-new-endpoints.js",
+        "shunfeng-ledger-2026-09-04-new-recalc.json",
+        "standardize-endpoints.js",
+        "preview-viz-template.html",
+        "inject-viz.py",
+        "shunfeng-ledger-2026-09-06.json"
+      ]
+    }
+  },
+  "routes": [
+    "/"
+  ],
+  "readme_excerpt": "",
+  "run_command_candidates": [],
+  "feature_candidates": [
+    "main assets",
+    "ledger MainActivity",
+    "ledger OcrEngine",
+    "ledger TodayWidgetProvider"
+  ]
+}

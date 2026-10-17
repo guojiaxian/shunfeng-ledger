@@ -1,0 +1,23 @@
+{
+  "output_directory": "当前目录/软件著作权申请资料",
+  "capabilities": {
+    "markdown_drafts": true,
+    "application_txt": true,
+    "basic_docx": true,
+    "python_docx": false,
+    "pandoc_preview": false,
+    "docx_openxml_full": false,
+    "dotnet_sdk": false
+  },
+  "versions": {
+    "pandoc": "not found",
+    "dotnet": "not found"
+  },
+  "final_docx_mode": "basic-ooxml",
+  "recommendation": "完整 DOCX OpenXML 环境未就绪。可以继续使用兜底 DOCX 生成；如需更规范的 Word 结构和校验，请先安装 .NET SDK 并运行 vendor/docx-toolkit/scripts/setup.sh。",
+  "install_prompt": "是否安装完整 DOCX 环境？安装后文档生成和校验更规范；不安装也可以继续生成 Markdown、TXT 和基础 DOCX。",
+  "requires_user_input": true,
+  "confirmation_stage": "environment",
+  "next_action": "请选择：1) 安装完整 DOCX 环境；2) 使用基础 DOCX 兜底继续。回复选择后再进入项目分析。",
+  "docx_env_output": "=== DOCX Environment Check ===\n\n[FAIL]    dotnet         not found\n\n  .NET SDK is REQUIRED. Install it:\n    # Option 1: Microsoft install script\n    wget https://dot.net/v1/dotnet-install.sh -O /tmp/dotnet-install.sh\n    chmod +x /tmp/dotnet-install.sh && /tmp/dotnet-install.sh --channel 8.0\n    # Option 2 (Ubuntu/Debian): sudo apt-get install -y dotnet-sdk-8.0\n\n  Or run the full setup: bash scripts/setup.sh\n\n[FAIL]    nuget          restore failed\n\n  Common causes:\n    - No internet access (NuGet needs to download packages)\n    - Corporate proxy blocking nuget.org\n    - SSL certificate issues (try: dotnet nuget list source)\n\n[WARN]    pandoc         not found — docx_preview.sh will use fallback\n           Install: sudo apt-get install pandoc  # or dnf/pacman\n[WARN]    soffice        not found — .doc files cannot be converted\n           Install: sudo apt-get install libreoffice-core\n[OK]      zip/unzip      available\n[OK]      locale         zh_CN.UTF-8\n[WARN]    permissions    4 script(s) not executable\n           Fix: chmod +x scripts/*.sh\n\nStatus: NOT READY\n\nCritical dependencies missing. Run the full setup:\n  bash scripts/setup.sh          # macOS / Linux / WSL\n  powershell scripts/setup.ps1   # Windows PowerShell"
+}

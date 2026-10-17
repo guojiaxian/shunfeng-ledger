@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>设计预览 · 「足迹」标签页 · 顺风账本</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,700&family=Manrope:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  /* ---------- Design Tokens（与主应用一致） ---------- */
+  :root{
+    --ink: #FBF9F3; --ink-2: #FFFFFF; --ink-3: #F6F1E5;
+    --surface: #EFE7D6; --surface-2: #E4D9C2;
+    --line: rgba(42,35,30,0.08); --line-strong: rgba(42,35,30,0.16);
+    --paper: #2A231E; --paper-dim: #6E6357; --muted: #9B8E7E; --muted-2: #B8AE9E;
+    --gold: #D49815; --gold-soft: #E6A823; --gold-deep: #A8760A;
+    --green: #6B9E5E; --red: #C8553A;
+    --gaode: #2E8B7E; --didi: #D9682A;
+    --shadow: 0 1px 0 rgba(255,255,255,0.6) inset, 0 8px 28px -14px rgba(42,35,30,0.22);
+    --r-sm: 10px; --r-md: 16px; --r-lg: 22px; --r-xl: 28px;
+    --ease: cubic-bezier(.2,.7,.2,1);
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background: var(--ink); color: var(--paper);
+    font-family:'Manrope', system-ui, sans-serif; -webkit-font-smoothing:antialiased;
+    line-height:1.5; min-height:100vh;
+    background-image:
+      radial-gradient(1200px 600px at 80% -10%, rgba(230,168,35,0.14), transparent 60%),
+      radial-gradient(900px 500px at -10% 10%, rgba(46,139,126,0.05), transparent 60%),
+      radial-gradient(700px 500px at 50% 120%, rgba(217,104,42,0.05), transparent 60%);
+  }
+  body::before{
+    content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.035 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+    opacity:.5; mix-blend-mode:multiply;
+  }
+  .serif{ font-family:'Fraunces', Georgia, 'Songti SC', serif; font-optical-sizing:auto; }
+  .tnum{ font-variant-numeric:tabular-nums; }
+  .mono{ font-family:'JetBrains Mono', ui-monospace, monospace; }
+
+  .page{ max-width:1120px; margin:0 auto; padding:34px 20px 90px; position:relative; z-index:1; }
+
+  /* ---------- 页头 ---------- */
+  .page-head{ display:flex; flex-wrap:wrap; gap:18px; align-items:flex-end; justify-content:space-between; margin-bottom:8px; }
+  .page-head h1{ font-size:30px; font-weight:600; margin:0; letter-spacing:-.5px; }
+  .page-head h1 em{ font-style:normal; color:var(--gold-deep); }
+  .page-head .sub{ color:var(--paper-dim); font-size:13.5px; margin-top:6px; max-width:720px; }
+  .page-head .sub b{ color:var(--paper); }
+  .pillrow{ display:flex; gap:8px; flex-wrap:wrap; }
+  .pill{
+    font-size:12px; font-weight:700; color:var(--paper-dim);
+    background:var(--ink-2); border:1px solid var(--line-strong);
+    padding:5px 11px; border-radius:999px; white-space:nowrap;
+  }
+  .pill b{ color:var(--gold-deep); }
+
+  /* ---------- 顶部说明条 ---------- */
+  .brief{
+    margin:18px 0 30px; background:var(--ink-2); border:1px solid var(--line);
+    border-radius:var(--r-lg); padding:16px 20px; display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:12px 28px; box-shadow:var(--shadow);
+  }
+  .brief .it .k{ font-size:11.5px; font-weight:800; letter-spacing:1px; color:var(--muted); margin-bottom:3px; }
+  .brief .it .v{ font-size:13.5px; color:var(--paper); }
+  .brief .it .v b{ color:var(--gold-deep); }
+
+  /* ---------- 手机样机 ---------- */
+  .stage{ display:grid; grid-template-columns:minmax(360px,430px) 1fr; gap:34px; align-items:start; }
+  @media (max-width:980px){ .stage{ grid-template-columns:1fr; } }
+  .phone{
+    width:100%; max-width:430px; margin:0 auto;
+    background:#14100D; border-radius:46px; padding:10px;
+    box-shadow:0 30px 70px -30px rgba(42,35,30,0.55), 0 2px 0 rgba(255,255,255,0.5) inset;
+    position:sticky; top:18px;
+  }
+  @media (max-width:980px){ .phone{ position:static; } }
+  .p-screen{
+    background:var(--ink); border-radius:37px; overflow:hidden; position:relative;
+    padding:12px 14px calc(18px + 14px); min-height:600px;
+  }
+  .p-notch{ position:absolute; top:12px; left:50%; transform:translateX(-50%); width:108px; height:26px; background:#14100D; border-radius:999px; z-index:5; }
+  .p-status{ display:flex; justify-content:space-between; align-items:center; font-size:12.5px; font-weight:700; color:var(--paper); padding:2px 12px 0; height:28px; }
+  .p-status .r{ display:flex; gap:5px; align-items:center; }
+  .p-status svg{ display:block; }
+
+  .p-brand{ display:flex; align-items:baseline; justify-content:space-between; padding:10px 4px 2px; }
+  .p-brand .t{ font-size:21px; font-weight:600; letter-spacing:-.3px; }
+  .p-brand .d{ font-size:11.5px; color:var(--muted); font-weight:600; }
+
+  /* tabs —— 与主应用同款样式 */
+  .p-tabs{ display:flex; gap:4px; background:var(--ink-3); border:1px solid var(--line); border-radius:14px; padding:4px; margin:10px 0 14px; }
+  .p-tab{ flex:1; text-align:center; font-size:13px; font-weight:700; color:var(--paper-dim); padding:7px 0; border-radius:10px; position:relative; }
+  .p-tab.active{ background:var(--ink-2); color:var(--paper); box-shadow:0 2px 8px -3px rgba(42,35,30,0.25); }
+  .p-tab.active::after{ content:""; position:absolute; left:50%; transform:translateX(-50%); bottom:-1px; width:16px; height:2.5px; border-radius:2px; background:var(--gold); }
+  .p-tab .cnt{ font-size:10px; color:var(--gold-deep); margin-left:2px; }
+
+  .p-body{ display:flex; flex-direction:column; gap:14px; }
+
+  .mod{ background:var(--ink-2); border:1px solid var(--line); border-radius:var(--r-lg); padding:14px; box-shadow:var(--shadow); position:relative; }
+  .mod-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; gap:8px; }
+  .mod-head h3{ font-family:'Fraunces', Georgia, serif; font-size:16.5px; font-weight:600; margin:0; display:flex; align-items:center; gap:8px; }
+  .badge{ font-family:'Manrope'; font-size:10.5px; font-weight:800; color:var(--gold-deep); background:rgba(212,152,21,0.12); border-radius:999px; padding:2.5px 9px; letter-spacing:.5px; }
+  .chiprow{ display:flex; gap:4px; background:var(--ink-3); padding:3px; border-radius:9px; }
+  .chip{ font-size:11px; font-weight:700; color:var(--paper-dim); padding:3.5px 10px; border-radius:7px; cursor:pointer; border:none; background:transparent; font-family:inherit; transition:all .15s var(--ease); }
+  .chip.on{ background:var(--ink-2); color:var(--paper); box-shadow:0 1px 4px -1px rgba(42,35,30,0.3); }
+  .cam{
+    border:1px solid var(--line-strong); background:var(--ink-3); color:var(--paper-dim);
+    width:26px; height:26px; border-radius:9px; display:flex; align-items:center; justify-content:center; cursor:pointer; flex:none;
+  }
+  .cam:hover{ color:var(--gold-deep); border-color:var(--gold); }
+  .mod .foot{ font-size:11px; color:var(--muted); margin-top:9px; line-height:1.6; }
+  .mod .foot b{ color:var(--paper-dim); }
+
+  /* KPI strip */
+  .kstrip{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+  .kstrip .k{ background:var(--ink-3); border:1px solid var(--line); border-radius:14px; padding:9px 6px 8px; text-align:center; }
+  .kstrip .n{ font-size:19px; font-weight:800; letter-spacing:-.5px; }
+  .kstrip .n small{ font-size:10px; font-weight:700; color:var(--muted); margin-left:1px; }
+  .kstrip .l{ font-size:10px; color:var(--paper-dim); font-weight:700; margin-top:1px; }
+
+  /* 地图 */
+  .mapbox{ position:relative; border-radius:16px; overflow:hidden; border:1px solid var(--line-strong); background:var(--ink-3); touch-action:none; cursor:grab; aspect-ratio:__MAP_W__ / __MAP_H__; }
+  .mapbox.dragging{ cursor:grabbing; }
+  .mapbox.amap-mode{ touch-action:auto; }
+  #amapDiv{ position:absolute; inset:0; z-index:1; }
+  #amapDiv .amap-logo, #amapDiv .amap-copyright{ opacity:.75; }
+  .map-inner{ position:absolute; inset:0; transform-origin:0 0; will-change:transform; }
+  .map-inner img{ width:100%; display:block; filter:sepia(0.14) saturate(0.82) brightness(1.03) contrast(0.96); }
+  .mapbox .tint{ position:absolute; inset:0; background:linear-gradient(180deg, rgba(251,249,243,0.10), rgba(251,249,243,0.16)); pointer-events:none; z-index:2; }
+  .map-inner svg{ position:absolute; inset:0; width:100%; height:100%; }
+  .mk{ display:block; border-radius:50%; box-sizing:border-box; cursor:pointer; }
+  .mk.pk{ background:#FBF9F3; border:.24em solid #1F7A6D; box-shadow:0 0 0 1.5px rgba(255,255,255,.85); }
+  .mk.dp{ background:#D9682A; border:2px solid #fff; box-shadow:0 1px 4px rgba(42,35,30,.45); }
+  .ndlabel{ font-size:10px; font-weight:800; color:#2A231E; background:rgba(251,249,243,.88); padding:1px 6px; border-radius:7px; white-space:nowrap; box-shadow:0 1px 3px rgba(42,35,30,.2); }
+  .map-filter{
+    position:absolute; top:8px; left:8px; z-index:6; display:none; align-items:center; gap:7px;
+    background:rgba(42,35,30,.92); color:#FBF9F3; font-size:11px; font-weight:700;
+    padding:4px 6px 4px 10px; border-radius:9px; max-width:72%; backdrop-filter:blur(2px);
+  }
+  .map-filter span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .map-filter b{ color:var(--gold-soft); }
+  .map-filter button{
+    border:none; background:rgba(255,255,255,.16); color:#FBF9F3; width:18px; height:18px;
+    border-radius:6px; cursor:pointer; font-size:10px; line-height:1; flex:none; font-family:inherit;
+  }
+  .map-filter button:hover{ background:rgba(255,255,255,.3); }
+  .map-zoom{ position:absolute; top:8px; right:8px; z-index:6; display:flex; flex-direction:column; gap:5px; }
+  .map-zoom button{
+    width:26px; height:26px; border-radius:8px; border:1px solid var(--line-strong);
+    background:rgba(251,249,243,0.92); color:var(--paper-dim); font-size:14px; font-weight:800;
+    cursor:pointer; line-height:1; display:flex; align-items:center; justify-content:center;
+    box-shadow:0 2px 8px -3px rgba(42,35,30,0.35); font-family:inherit; backdrop-filter:blur(2px);
+  }
+  .map-zoom button:hover{ color:var(--gold-deep); border-color:var(--gold); }
+  .map-info{
+    display:none; margin-top:9px; background:var(--ink-3); border:1px solid var(--line);
+    border-left:3px solid var(--gold); border-radius:12px; padding:9px 30px 9px 12px;
+    font-size:11.5px; color:var(--paper-dim); line-height:1.65; position:relative;
+  }
+  .map-info b{ color:var(--paper); }
+  .map-info .x{
+    position:absolute; top:8px; right:8px; width:20px; height:20px; border-radius:7px;
+    border:1px solid var(--line-strong); background:var(--ink-2); color:var(--paper-dim);
+    font-size:10px; cursor:pointer; line-height:1; font-family:inherit;
+  }
+  .map-legend{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-top:9px; font-size:10.5px; color:var(--paper-dim); font-weight:700; }
+  .lg-dot{ display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:4px; vertical-align:-1px; }
+  .lg-line{ display:inline-block; width:18px; height:0; border-top:2.5px solid; margin-right:4px; vertical-align:3px; border-image:linear-gradient(90deg,var(--gaode),var(--didi)) 1; }
+  .map-tip{
+    position:absolute; pointer-events:none; background:rgba(42,35,30,0.92); color:#FBF9F3;
+    font-size:11px; font-weight:600; padding:6px 9px; border-radius:9px; white-space:nowrap;
+    transform:translate(-50%,-130%); opacity:0; transition:opacity .12s; z-index:9; backdrop-filter:blur(2px);
+  }
+  .map-tip b{ color:var(--gold-soft); }
+
+  /* 词云 */
+  .cloudbox{ position:relative; }
+  .cloudbox canvas{ width:100%; display:block; cursor:pointer; border-radius:14px; background:
+    radial-gradient(320px 190px at 50% 42%, rgba(230,168,35,0.07), transparent 70%), var(--ink-3);
+    border:1px solid var(--line); }
+
+  /* 线路榜 */
+  .rrank{ display:flex; flex-direction:column; gap:9px; }
+  .rrow{ display:grid; grid-template-columns:24px 1fr 52px; gap:10px; align-items:center; }
+  .rrow .no{ font-family:'Fraunces',serif; font-size:17px; font-weight:600; color:var(--muted-2); text-align:center; }
+  .rrow.top1 .no{ color:var(--gold); } .rrow.top2 .no{ color:var(--gold-deep); } .rrow.top3 .no{ color:var(--didi); }
+  .rrow .bd{ min-width:0; }
+  .rrow .rt{ font-size:12px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .rrow .rt .ar{ color:var(--muted); margin:0 3px; }
+  .rrow .bar{ height:5px; border-radius:3px; background:var(--ink-3); margin-top:5px; overflow:hidden; }
+  .rrow .bar i{ display:block; height:100%; border-radius:3px; background:linear-gradient(90deg, var(--gaode), var(--gold), var(--didi)); }
+  .rrow .meta{ font-size:10px; color:var(--muted); margin-top:3px; }
+  .rrow .amt{ text-align:right; }
+  .rrow .amt .a{ font-size:13.5px; font-weight:800; }
+  .rrow .amt .a small{ font-size:9.5px; color:var(--muted); font-weight:700; }
+  .rrow .amt .c{ font-size:9.5px; color:var(--muted); font-weight:700; }
+
+  /* 跨区矩阵 */
+  .dmat{ display:grid; grid-template-columns:58px repeat(5,1fr); gap:3px; font-size:10.5px; }
+  .dmat .hd{ font-weight:800; color:var(--paper-dim); display:flex; align-items:center; justify-content:center; text-align:center; line-height:1.15; }
+  .dmat .rl{ font-weight:800; color:var(--paper-dim); display:flex; align-items:center; justify-content:flex-end; padding-right:6px; white-space:nowrap; }
+  .dmat .cell{ border-radius:7px; display:flex; align-items:center; justify-content:center; font-weight:800; color:var(--paper); min-height:30px; border:1px solid var(--line); background:var(--ink-3); }
+  .dmat .tot{ color:var(--gold-deep); background:rgba(212,152,21,0.08); border-color:rgba(212,152,21,0.25); }
+
+  /* 时刻热力 */
+  .heat{ display:grid; grid-template-columns:20px repeat(24,1fr); gap:2.5px; align-items:center; }
+  .heat .hl{ font-size:9.5px; font-weight:800; color:var(--paper-dim); text-align:center; }
+  .heat .hc{ height:15px; border-radius:3.5px; background:var(--ink-3); border:1px solid rgba(42,35,30,0.05); }
+  .heat .axis{ grid-column:2 / 26; display:grid; grid-template-columns:repeat(24,1fr); gap:2.5px; margin-top:2px; }
+  .heat .axis span{ font-size:8px; color:var(--muted-2); text-align:center; }
+
+  /* 散点 */
+  .scat svg{ width:100%; display:block; }
+  .scat .lg{ display:flex; gap:14px; font-size:10.5px; color:var(--paper-dim); font-weight:700; margin-top:6px; }
+
+  /* ---------- 右侧/下方：设计说明 ---------- */
+  .side-title{ font-size:13px; font-weight:800; letter-spacing:2px; color:var(--muted); margin:6px 0 14px; display:flex; align-items:center; gap:10px; }
+  .side-title::after{ content:""; flex:1; height:1px; background:var(--line-strong); }
+  .notes{ display:flex; flex-direction:column; gap:14px; }
+  .note{ background:var(--ink-2); border:1px solid var(--line); border-radius:var(--r-lg); padding:18px; box-shadow:var(--shadow); }
+  .note .no{ font-family:'Fraunces',serif; font-size:13px; color:var(--gold); font-weight:700; letter-spacing:1px; }
+  .note h4{ margin:4px 0 8px; font-size:16.5px; font-weight:700; font-family:'Fraunces',Georgia,serif; }
+  .note p{ margin:0 0 8px; font-size:12.5px; color:var(--paper-dim); line-height:1.65; }
+  .note p b{ color:var(--paper); }
+  .note .api{ display:flex; gap:6px; flex-wrap:wrap; margin-top:2px; }
+  .api span{ font-size:10.5px; font-weight:700; color:var(--gaode); background:rgba(46,139,126,0.09); border:1px solid rgba(46,139,126,0.22); padding:2.5px 8px; border-radius:999px; }
+  .api span.local{ color:var(--gold-deep); background:rgba(212,152,21,0.09); border-color:rgba(212,152,21,0.25); }
+  .tech{ grid-column:1/-1; background:linear-gradient(135deg, rgba(212,152,21,0.07), rgba(46,139,126,0.05)), var(--ink-2); }
+  .tech ul{ margin:8px 0 0; padding:0; list-style:none; display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:8px 22px; }
+  .tech li{ font-size:12.5px; color:var(--paper-dim); line-height:1.6; padding-left:20px; position:relative; }
+  .tech li::before{ content:""; position:absolute; left:2px; top:8px; width:7px; height:7px; border-radius:2px; background:var(--gold); transform:rotate(45deg); }
+  .tech li b{ color:var(--paper); }
+
+  footer{ margin-top:34px; text-align:center; font-size:11.5px; color:var(--muted); }
+
+  /* toast */
+  #toast{ position:fixed; left:50%; bottom:34px; transform:translateX(-50%); background:rgba(42,35,30,0.94); color:#FBF9F3; font-size:12.5px; font-weight:600; padding:9px 16px; border-radius:12px; opacity:0; pointer-events:none; transition:all .25s var(--ease); z-index:99; }
+  #toast.on{ opacity:1; bottom:44px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="page-head">
+    <div>
+      <h1 class="serif">新功能设计预览 · <em>「足迹」</em>标签页</h1>
+      <div class="sub">
+        在 <b>流水 / 日历 / 统计</b> 之后新增第 4 个标签页，用图片化的方式展示出行轨迹与规律。
+        以下为高保真设计稿，<b>全部使用真实数据</b>（shunfeng-ledger-2026-09-04-new-recalc.json，118 单）。
+      </div>
+    </div>
+    <div class="pillrow">
+      <span class="pill">设计稿 v3 · JS API 交互地图</span>
+      <span class="pill">2026-09-05</span>
+      <span class="pill">高德 API：<b>JS API 2.0 · POI 检索 · 地理编码</b></span>
+    </div>
+  </div>
+
+  <div class="brief">
+    <div class="it"><div class="k">方案核心</div><div class="v">高德 <b>JS API 2.0 交互地图</b>承载拓扑线：原生缩放/拖拽/点选；<b>静态底图方案保留为断网兜底</b></div></div>
+    <div class="it"><div class="k">数据口径</div><div class="v">118 单中 <b>116 单</b>有完整起终点；OCR 误识别的"单笔奖励"记录已自动排除</div></div>
+    <div class="it"><div class="k">地点归并</div><div class="v">POI 检索得坐标后，名称相似且 &lt;200m 的自动合并：<b>197 → 180 个地点</b></div></div>
+    <div class="it"><div class="k">图片导出</div><div class="v">每个卡片可单独"生成图片"保存/分享，复用已内置的 html2canvas</div></div>
+  </div>
+
+  <div class="stage">
+    <!-- ══════════ 手机样机 ══════════ -->
+    <div class="phone">
+      <div class="p-screen">
+        <div class="p-notch"></div>
+        <div class="p-status">
+          <span class="tnum">22:30</span>
+          <span class="r">
+            <svg width="15" height="10" viewBox="0 0 15 10"><g fill="#2A231E"><rect x="0" y="6" width="2.4" height="4" rx="0.8"/><rect x="4" y="4" width="2.4" height="6" rx="0.8"/><rect x="8" y="2" width="2.4" height="8" rx="0.8"/><rect x="12" y="0" width="2.4" height="10" rx="0.8" opacity="0.3"/></g></svg>
+            <svg width="22" height="11" viewBox="0 0 22 11"><rect x="0.5" y="0.5" width="18" height="10" rx="3" fill="none" stroke="#2A231E" opacity="0.4"/><rect x="2" y="2" width="12" height="7" rx="1.6" fill="#2A231E"/><rect x="19.5" y="3.4" width="2" height="4.2" rx="1" fill="#2A231E" opacity="0.4"/></svg>
+          </span>
+        </div>
+
+        <div class="p-brand">
+          <span class="t serif">顺风 · 账本</span>
+          <span class="d tnum">9 月 · ¥2,310.82</span>
+        </div>
+
+        <nav class="p-tabs">
+          <div class="p-tab">流水</div>
+          <div class="p-tab">日历</div>
+          <div class="p-tab">统计</div>
+          <div class="p-tab active">足迹<span class="cnt" id="tabCnt">—</span></div>
+        </nav>
+
+        <div class="p-body">
+
+          <!-- KPI -->
+          <div class="kstrip">
+            <div class="k"><div class="n tnum" id="kLoc">—</div><div class="l">地点</div></div>
+            <div class="k"><div class="n tnum" id="kRoute">—</div><div class="l">线路</div></div>
+            <div class="k"><div class="n tnum" id="kTrip">—</div><div class="l">有轨迹行程</div></div>
+            <div class="k"><div class="n tnum" id="kDist">—</div><div class="l">轨迹里程 km</div></div>
+          </div>
+
+          <!-- ① 路网图 -->
+          <div class="mod" id="modMap">
+            <div class="mod-head">
+              <h3>出行路网<span class="badge">拓扑图</span></h3>
+              <div style="display:flex;gap:6px;align-items:center;">
+                <div class="chiprow" id="mapMetric">
+                  <button class="chip on" data-m="n">按单数</button>
+                  <button class="chip" data-m="amount">按收入</button>
+                </div>
+                <button class="cam" data-mod="map" title="生成图片">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                </button>
+              </div>
+            </div>
+            <div class="mapbox" id="mapBox">
+              <div id="amapDiv"></div>
+              <div class="map-inner" id="mapInner" style="display:none">
+                <img id="mapImg" src="data:image/png;base64,__MAP_B64__" alt="郑州底图" />
+                <svg id="mapSvg" viewBox="0 0 __MAP_W__ __MAP_H__" preserveAspectRatio="none"></svg>
+              </div>
+              <div class="tint"></div>
+              <div class="map-filter" id="mapFilter"><span></span><button id="mfClear" title="清除筛选">✕</button></div>
+              <div class="map-zoom">
+                <button id="zin" title="放大">+</button>
+                <button id="zout" title="缩小">−</button>
+                <button id="zreset" title="复位视野">1:1</button>
+              </div>
+              <div class="map-tip" id="mapTip"></div>
+            </div>
+            <div class="map-info" id="mapInfo"></div>
+            <div class="map-legend">
+              <span><i class="lg-dot" style="background:var(--gaode);border:2px solid #fff;box-shadow:0 0 0 1.5px var(--gaode);"></i>上车点</span>
+              <span><i class="lg-dot" style="background:var(--didi);"></i>下车点</span>
+              <span><i class="lg-line"></i>线路（宽 = <span id="lgMetric">单数</span>）</span>
+              <span style="margin-left:auto;">缩放 / 拖动 · <b style="color:var(--gold-deep)">点击地点或线路筛选</b></span>
+            </div>
+            <div class="foot" id="mapFoot"></div>
+          </div>
+
+          <!-- ② 词云 -->
+          <div class="mod" id="modCloud">
+            <div class="mod-head">
+              <h3>常去地点词云<span class="badge">频率</span></h3>
+              <div style="display:flex;gap:6px;align-items:center;">
+                <div class="chiprow" id="cloudMode">
+                  <button class="chip on" data-c="all">全部</button>
+                  <button class="chip" data-c="p">起点</button>
+                  <button class="chip" data-c="d">终点</button>
+                </div>
+                <button class="cam" data-mod="cloud" title="生成图片">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                </button>
+              </div>
+            </div>
+            <div class="cloudbox"><canvas id="cloudCv"></canvas></div>
+            <div class="foot"><b style="color:var(--gaode)">青色 = 上车点</b> · <b style="color:var(--didi)">暖橙 = 下车点</b> · 字号越大去得越勤</div>
+          </div>
+
+          <!-- ③ 线路榜 -->
+          <div class="mod" id="modRank">
+            <div class="mod-head">
+              <h3>黄金线路榜<span class="badge">≥2 单</span></h3>
+              <button class="cam" data-mod="rank" title="生成图片">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              </button>
+            </div>
+            <div class="rrank" id="rankList"></div>
+            <div class="foot" id="rankFoot"></div>
+          </div>
+
+          <!-- ④ 跨区矩阵 -->
+          <div class="mod" id="modMat">
+            <div class="mod-head">
+              <h3>跨区流向<span class="badge">行政区</span></h3>
+              <button class="cam" data-mod="mat" title="生成图片">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              </button>
+            </div>
+            <div class="dmat" id="dmat"></div>
+            <div class="foot" id="matFoot"></div>
+          </div>
+
+          <!-- ⑤ 时刻热力 -->
+          <div class="mod" id="modHeat">
+            <div class="mod-head">
+              <h3>出车时刻<span class="badge">周 × 24h</span></h3>
+              <button class="cam" data-mod="heat" title="生成图片">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              </button>
+            </div>
+            <div class="heat" id="heatGrid"></div>
+            <div class="foot" id="heatFoot"></div>
+          </div>
+
+          <!-- ⑥ 散点 -->
+          <div class="mod scat" id="modScat">
+            <div class="mod-head">
+              <h3>里程 · 单价散点<span class="badge">值不值</span></h3>
+              <button class="cam" data-mod="scat" title="生成图片">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              </button>
+            </div>
+            <div id="scatBox"></div>
+            <div class="scat lg">
+              <span><i class="lg-dot" style="background:var(--gaode);"></i>高德</span>
+              <span><i class="lg-dot" style="background:var(--didi);"></i>滴滴</span>
+              <span>泡的大小 = 单笔收入</span>
+            </div>
+            <div class="foot" id="scatFoot"></div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ 设计说明 ══════════ -->
+    <div class="side-col">
+      <div class="side-title">设计说明 · 9 个要点</div>
+      <div class="notes">
+        <div class="note">
+          <div class="no">模块 ①</div>
+          <h4>出行路网拓扑图</h4>
+          <p>在高德底图上，把每条行程画成<b>起点→终点的贝塞尔曲线</b>：青→橙渐变表方向，线宽/深浅表频次或收入，标记大小表地点热度。一眼看出你的运营半径与主动脉：西流湖 → 省肿瘤医院这条黄金线在图上自然浮出。</p>
+          <p><b>读数：</b>180 个地点 · 98 条线路 · 最热线路 14 单；白描边曲线保证可见度；<b>高德原生手势</b>缩放/拖拽/捏合，悬停显示明细，<b>点击地点筛选相关线路、点击线路查看汇总</b>（预览可体验）。</p>
+          <div class="api"><span>JS API 2.0（交互地图）</span><span>POI 检索 2.0（坐标）</span><span class="local">静态底图为断网兜底</span></div>
+        </div>
+        <div class="note">
+          <div class="no">模块 ②</div>
+          <h4>常去地点词云</h4>
+          <p>起点与终点合并在一张云图里，<b>字号 = 出现频率</b>，颜色区分上车（青）/下车（橙）。"碧桂园西流湖名城"与"省肿瘤医院"会以最大字号占据视觉中心。可切换只看起点或只看终点，<b>点击词语显示具体次数</b>。</p>
+          <p><b>实现：</b>Canvas 本地排版（螺旋防重叠算法），无第三方库。</p>
+          <div class="api"><span class="local">纯本地渲染 · 零 API 消耗</span></div>
+        </div>
+        <div class="note">
+          <div class="no">模块 ③</div>
+          <h4>黄金线路榜</h4>
+          <p>把词云的"点"连成"线"做排行：每条线路显示单数、平均里程、累计收入。快速回答"我最值钱的固定线路是哪条"，也可作为接单参考。</p>
+          <p><b>读数：</b>仅展示 ≥2 单的线路（当前 3 条），TOP1 碧桂园西流湖名城 → 省肿瘤医院 14 单；零散单不计入榜单。</p>
+          <div class="api"><span class="local">本地聚合</span></div>
+        </div>
+        <div class="note">
+          <div class="no">模块 ④</div>
+          <h4>跨区流向矩阵</h4>
+          <p>按高德行政区划把地点归到区县，形成"上车区 × 下车区"热力矩阵。你的接单圈实际横跨中原/金水/二七/管城/惠济/新郑/中牟 7 区县（南至龙湖镇、东至方特），主客流方向一目了然。</p>
+          <p><b>实现：</b>POI 检索结果自带 <b>adname（区县）</b>，无需额外请求。</p>
+          <div class="api"><span>POI 检索（行政区归属）</span></div>
+        </div>
+        <div class="note">
+          <div class="no">模块 ⑤</div>
+          <h4>出车时刻热力图</h4>
+          <p>星期 × 24 小时网格，颜色越深出车越多。跑顺风车的节奏（早高峰？周末返程？）直接显形，辅助规划出车时段。</p>
+          <p><b>实现：</b>订单 date/time 本地统计，168 格 CSS Grid 渲染。</p>
+          <div class="api"><span class="local">本地聚合</span></div>
+        </div>
+        <div class="note">
+          <div class="no">模块 ⑥</div>
+          <h4>里程 · 单价散点</h4>
+          <p>横轴里程、纵轴每公里收入、泡的大小为单笔金额，颜色区分平台。虚线为中位数参考线，右下角"薄利长途"、左上角"短途高价"象限自明 —— 回答"什么样的单值得接"。</p>
+          <p><b>读数：</b>116 个有轨迹行程全量绘制；纵轴按 ¥5/km 截断，超短途高单价单钉在顶端并加箭头标注，避免拉伸坐标。</p>
+          <div class="api"><span class="local">本地聚合</span></div>
+        </div>
+        <div class="note">
+          <div class="no">交互设计</div>
+          <h4>正式版交互与动效</h4>
+          <p><b>路网图（预览中已可体验）：</b>高德原生缩放/捏合/拖拽，悬停线路浮明细，<b>点选地点→只看相关线路</b>，点选线路→汇总卡，✕ 或点空白处还原；<b>词云：</b>点击词语查看次数；<b>维度切换：</b>单数 / 收入 chip 切换。</p>
+          <p><b>性能：</b>切到足迹页才渲染，图卡骨架屏占位；地图底图 PNG 本地缓存，断网时显示纯色底 + 曲线（拓扑仍可读）。</p>
+          <div class="api"><span class="local">预览页可直接体验悬停</span></div>
+        </div>
+        <div class="note">
+          <div class="no">数据管线</div>
+          <h4>高德 API 调用与缓存</h4>
+          <p>订单起终点文字 → <b>POI 检索</b>（region=郑州，失败退地理编码）得到坐标与区县 → 写入备份 JSON 的 <b>placeCache</b> 字段永久缓存，同名地点去重合并（本次 197 → 180）。底图用<b>静态地图 API</b> 取一张 PNG，之后每次打开不再消耗 API 配额。</p>
+          <p>本次设计共消耗 POI 检索约 200 次（已全部完成并缓存），正式版仅在新增地点时增量调用。</p>
+          <div class="api"><span>POI 检索 2.0</span><span>地理编码（兜底）</span><span>静态地图</span></div>
+        </div>
+        <div class="note tech">
+          <div class="no">实施方案（确认后执行）</div>
+          <h4>技术要点与改动范围</h4>
+          <ul>
+            <li><b>交互地图已落地：</b>你提供的 Web 端(JS API) Key + 安全密钥已接入（JS API 2.0，明文 jscode 方式），底图用 whitesmoke 浅色样式贴合暖纸主题。</li>
+            <li><b>坐标缓存：</b>地理编码结果写入备份 JSON（新增 placeCache 字段），只请求一次，之后完全离线可用。</li>
+            <li><b>改动点：</b>index.html 新增 tab、JS API 接入与 6 个渲染函数；android-app assets 同步（WebView 需开启 WebGL/JS DOM storage）；数据管线复用 recalc 的 amapGet。</li>
+            <li><b>图片导出：</b>每个模块相机按钮 → html2canvas 截卡片 → 复用现有 Android.shareImage 分享/保存。</li>
+            <li><b>异常防御：</b>OCR 起终点缺失/乱文（如"单笔奖励"）自动跳过；解析失败的地点不上图但计入提示。</li>
+            <li><b>双层兜底：</b>JS API 加载失败/断网时自动回退"静态底图 + SVG 拓扑"方案，两种模式共用同一套数据与筛选逻辑；导出长图已配置 WebGL preserveDrawingBuffer。</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>设计稿 · 数据快照 2026-09-04 · 顺风账本「足迹」标签页 · 确认后正式实施</footer>
+</div>
+<div id="toast"></div>
+
+<script>
+/*__VIZ__*/
+/* ---------- 地图投影 ---------- */
+const P = __PROJ__;
+const R = 2 * Math.PI / 360;
+const merc = lat => Math.log(Math.tan(Math.PI/4 + lat*Math.PI/360));
+const PXD = 256 * Math.pow(2, P.zoom) / 360;
+const proj = (lng, lat) => [
+  (lng - P.clng) * PXD + P.W/2,
+  P.H/2 - (merc(lat) - merc(P.clat)) * PXD / R
+];
+const $ = s => document.querySelector(s);
+const fmt = n => n.toLocaleString('zh-CN');
+
+/* ---------- KPI ---------- */
+$('#kLoc').textContent = VIZ.kpis.locations;
+$('#kRoute').textContent = VIZ.kpis.routes;
+$('#kTrip').textContent = VIZ.kpis.ordersOD;
+$('#kDist').textContent = Math.round(VIZ.kpis.distOD);
+$('#tabCnt').textContent = VIZ.kpis.locations;
+
+/* ---------- ① 路网图 ---------- */
+const svg = $('#mapSvg'), tip = $('#mapTip');
+const nodeById = i => VIZ.nodes[i];
+let mapMetric = 'n';
+
+function drawMap(){
+  const ods = VIZ.od;
+  const maxV = Math.max(...ods.map(o => o[mapMetric]));
+  const wOf = v => 1.6 + 3.4 * Math.pow(v/maxV, 0.6);
+  let defs = '', paths = '', hits = '', dots = '', labels = '';
+
+  ods.forEach((o, i) => {
+    const a = proj(nodeById(o.p).lng, nodeById(o.p).lat);
+    const b = proj(nodeById(o.d).lng, nodeById(o.d).lat);
+    const mx = (a[0]+b[0])/2, my = (a[1]+b[1])/2;
+    const dx = b[0]-a[0], dy = b[1]-a[1];
+    const len = Math.hypot(dx, dy) || 1;
+    const bow = (0.10 + 0.05 * ((i * 7) % 4)) * (i % 2 ? 1 : -1);
+    const cx = mx - dy/len * len * bow, cy = my + dx/len * len * bow;
+    defs += `<linearGradient id="lg${i}" gradientUnits="userSpaceOnUse" x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}">
+      <stop offset="0" stop-color="#2E8B7E"/><stop offset="1" stop-color="#D9682A"/></linearGradient>`;
+    const dPath = `M${a[0].toFixed(1)},${a[1].toFixed(1)} Q${cx.toFixed(1)},${cy.toFixed(1)} ${b[0].toFixed(1)},${b[1].toFixed(1)}`;
+    const w = wOf(o[mapMetric]);
+    // 白色描边打底，保证在地图上清晰可见
+    paths += `<path d="${dPath}" fill="none" stroke="#FFFFFF" stroke-width="${(w+2.6).toFixed(2)}" stroke-linecap="round" opacity="0.75"/>`;
+    paths += `<path d="${dPath}" fill="none" stroke="url(#lg${i})" stroke-width="${w.toFixed(2)}" stroke-linecap="round"
+      opacity="${(0.52 + 0.40*(o[mapMetric]/maxV)).toFixed(2)}"/>`;
+    hits += `<path class="hit" data-i="${i}" d="${dPath}"
+      fill="none" stroke="#000" stroke-opacity="0" stroke-width="12" stroke-linecap="round" style="cursor:pointer"/>`;
+  });
+
+  // 标记：起点空心青环，终点实心橙点，半径按频次
+  VIZ.nodes.forEach(nd => {
+    const [x, y] = proj(nd.lng, nd.lat);
+    if (nd.p > 0){
+      const r = 2.8 + Math.sqrt(nd.p) * 1.6;
+      dots += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r.toFixed(1)}" fill="#FBF9F3" stroke="#1F7A6D" stroke-width="${Math.min(3.4, 1.6+nd.p*0.18).toFixed(1)}"><title>上车 · ${nd.name} × ${nd.p}</title></circle>`;
+    }
+    if (nd.dr > 0){
+      const r = 2.4 + Math.sqrt(nd.dr) * 1.4;
+      dots += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r.toFixed(1)}" fill="#D9682A" stroke="#fff" stroke-width="1.2"><title>下车 · ${nd.name} × ${nd.dr}</title></circle>`;
+    }
+  });
+
+  // 高频地点标签
+  VIZ.nodes.filter(nd => Math.max(nd.p, nd.dr) >= 3).forEach(nd => {
+    const [x, y] = proj(nd.lng, nd.lat);
+    const nm = nd.name.length > 9 ? nd.name.replace(/（[^）]*）|\([^)]*\)/g,'') : nd.name;
+    labels += `<text x="${x.toFixed(1)}" y="${(y-8).toFixed(1)}" text-anchor="middle" font-size="10.5" font-weight="800"
+      fill="#2A231E" stroke="#FBF9F3" stroke-width="3" paint-order="stroke">${nm}</text>`;
+  });
+
+  svg.innerHTML = `<defs>${defs}</defs><g id="lines">${paths}</g><g id="dots" style="pointer-events:none">${dots}</g><g id="labels" style="pointer-events:none">${labels}</g><g id="hits" style="pointer-events:stroke">${hits}</g>`;
+  bindHits();
+}
+
+function bindHits(){
+  svg.querySelectorAll('.hit').forEach(h => {
+    h.addEventListener('mousemove', e => {
+      const o = VIZ.od[+h.dataset.i];
+      const p = nodeById(o.p), d = nodeById(o.d);
+      tip.innerHTML = `${p.name} → ${d.name}<br><b>${o.n} 单</b> · ${fmt(Math.round(o.amount))} 元 · 均 ${(o.distance/o.n).toFixed(1)} km`;
+      const box = $('.mapbox').getBoundingClientRect();
+      tip.style.left = (e.clientX - box.left) + 'px';
+      tip.style.top = (e.clientY - box.top) + 'px';
+      tip.style.opacity = 1;
+    });
+    h.addEventListener('mouseleave', () => tip.style.opacity = 0);
+  });
+}
+
+$('#mapMetric').addEventListener('click', e => {
+  const b = e.target.closest('.chip'); if(!b) return;
+  $('#mapMetric').querySelectorAll('.chip').forEach(c => c.classList.toggle('on', c === b));
+  mapMetric = b.dataset.m;
+  $('#lgMetric').textContent = mapMetric === 'n' ? '单数' : '收入';
+  if (AMapOK){ amapRestyle(); } else { drawMap(); }
+});
+
+/* ---------- 高德 JS API：交互地图（加载失败自动回退静态拓扑） ---------- */
+const AMAP_KEY = '3515feb50f4cdee799ebaf85a708277c';
+const AMAP_SEC = 'f6a63ce21f4e6d9b77fc7a319014c325';
+let AMapOK = false, amap = null, amapRoutes = [];
+let amapSel = null;   // {type:'node', nd} | {type:'route', rec}
+
+function loadAmap(){
+  return new Promise(res => {
+    if (window.AMap) return res(true);
+    window._AMapSecurityConfig = { securityJsCode: AMAP_SEC };   // 必须在 JS API 脚本之前设置
+    const sc = document.createElement('script');
+    sc.src = `https://webapi.amap.com/maps?v=2.0&key=${AMAP_KEY}`;
+    let done = false;
+    const fin = ok => { if (!done){ done = true; res(ok && !!window.AMap); } };
+    sc.onload = () => fin(true);
+    sc.onerror = () => fin(false);
+    document.head.appendChild(sc);
+    setTimeout(() => fin(!!window.AMap), 9000);
+  });
+}
+
+function amapWOf(v){
+  const maxV = Math.max(...VIZ.od.map(o => o[mapMetric]));
+  return 1.8 + 3.6 * Math.pow(v/maxV, 0.6);
+}
+function amapSetStyle(rec, mode){
+  // 全量参数写入，避免部分更新在个别环境下的表现歧义
+  const w = mode === 'hot' ? rec.baseW + 1.8 : rec.baseW;
+  const o = mode === 'dim' ? 0.10 : (mode === 'hot' ? 0.95 : 0.80);
+  rec.h0.setOptions({ path: rec.h0.getOptions().path, strokeColor: '#2E8B7E', strokeWeight: w, strokeOpacity: o, zIndex: 21, lineJoin: 'round', lineCap: 'round', showDir: rec.o.n >= 2 });
+  rec.h1.setOptions({ path: rec.h1.getOptions().path, strokeColor: '#D9682A', strokeWeight: w, strokeOpacity: o, zIndex: 21, lineJoin: 'round', lineCap: 'round', showDir: rec.o.n >= 2 });
+  rec.casing.setOptions({ path: rec.casing.getOptions().path, strokeColor: '#FFFFFF', strokeWeight: w + 2.6, strokeOpacity: mode === 'dim' ? 0.12 : 0.6, zIndex: 20 });
+}
+function amapRestyle(){
+  VIZ.od.forEach((o, i) => {
+    const rec = amapRoutes[i];
+    rec.baseW = amapWOf(o[mapMetric]);
+    const dim = amapSel && !(amapSel.type === 'node' ? (o.p === amapSel.nd.i || o.d === amapSel.nd.i)
+                 : (rec === amapSel.rec));
+    amapSetStyle(rec, dim ? 'dim' : (amapSel && !dim ? 'hot' : 'normal'));
+  });
+}
+function bezierPts(A, B, C, n){
+  n = n || 26;
+  const pts = [];
+  for (let k = 0; k <= n; k++){
+    const t = k/n, u = 1-t;
+    pts.push([u*u*A[0] + 2*u*t*C[0] + t*t*B[0], u*u*A[1] + 2*u*t*C[1] + t*t*B[1]]);
+  }
+  return pts;
+}
+
+function buildAmap(){
+  amap = new AMap.Map('amapDiv', {
+    viewMode: '2D',
+    mapStyle: 'amap://styles/whitesmoke',
+    zoom: 11, center: [P.clng, P.clat],
+    zooms: [10, 17],
+    WebGLParams: { preserveDrawingBuffer: true }   // 供 html2canvas 导出长图
+  });
+
+  const fitOverlays = [];
+  VIZ.od.forEach((o, i) => {
+    const A = [nodeById(o.p).lng, nodeById(o.p).lat], B = [nodeById(o.d).lng, nodeById(o.d).lat];
+    const mx = (A[0]+B[0])/2, my = (A[1]+B[1])/2;
+    const bow = (0.10 + 0.05 * ((i*7)%4)) * (i%2 ? 1 : -1);
+    const C = [mx - (B[1]-A[1])*bow, my + (B[0]-A[0])*bow];
+    const pts = bezierPts(A, B, C);
+    const baseW = amapWOf(o[mapMetric]);
+    const casing = new AMap.Polyline({ path: pts, strokeColor: '#FFFFFF', strokeWeight: baseW + 2.6,
+      strokeOpacity: 0.6, zIndex: 20, bubble: false, lineJoin: 'round', lineCap: 'round' });
+    // 前半段青（起点侧）→ 后半段橙（终点侧），≥2 单的线路显示方向箭头
+    const h0 = new AMap.Polyline({ path: pts.slice(0, 14), strokeColor: '#2E8B7E', strokeWeight: baseW,
+      strokeOpacity: 0.8, zIndex: 21, bubble: false, showDir: o.n >= 2, lineJoin: 'round', lineCap: 'round' });
+    const h1 = new AMap.Polyline({ path: pts.slice(13), strokeColor: '#D9682A', strokeWeight: baseW,
+      strokeOpacity: 0.8, zIndex: 21, bubble: false, showDir: o.n >= 2, lineJoin: 'round', lineCap: 'round' });
+    const rec = { o, casing, h0, h1, baseW };
+    amapRoutes.push(rec);
+    [casing, h0, h1].forEach(p => {
+      p.on('mouseover', () => { if (!amapSel) amapSetStyle(rec, 'hot'); });
+      p.on('mouseout',  () => { if (!amapSel) amapSetStyle(rec, 'normal'); hideMapTip(); });
+      p.on('mousemove', e => showMapTip(e, rec.o));
+      p.on('click',     e => { selectRoute(rec); });
+    });
+    fitOverlays.push(casing);
+    amap.add([casing, h0, h1]);
+  });
+
+  // 地点标记：起点空心青环 / 终点实心橙点
+  VIZ.nodes.forEach(nd => {
+    if (nd.p > 0){
+      const r = (9 + Math.sqrt(nd.p) * 2.6).toFixed(0);
+      const mk = new AMap.Marker({ position: [nd.lng, nd.lat], anchor: 'center', zIndex: 40,
+        content: `<span class="mk pk" style="width:${r}px;height:${r}px" title="上车 · ${nd.name} × ${nd.p}"></span>` });
+      mk.on('click', () => selectNode(nd));
+      amap.add(mk);
+    }
+    if (nd.dr > 0){
+      const r = (7.5 + Math.sqrt(nd.dr) * 2.4).toFixed(0);
+      const mk = new AMap.Marker({ position: [nd.lng, nd.lat], anchor: 'center', zIndex: 41,
+        content: `<span class="mk dp" style="width:${r}px;height:${r}px" title="下车 · ${nd.name} × ${nd.dr}"></span>` });
+      mk.on('click', () => selectNode(nd));
+      amap.add(mk);
+    }
+  });
+  // 高频地点标签
+  VIZ.nodes.filter(nd => Math.max(nd.p, nd.dr) >= 3).forEach(nd => {
+    const nm = nd.name.length > 9 ? nd.name.replace(/（[^）]*）|\([^)]*\)/g,'') : nd.name;
+    const t = new AMap.Marker({ position: [nd.lng, nd.lat], anchor: 'bottom-center', zIndex: 39,
+      content: `<span class="ndlabel">${nm}</span>` });
+    amap.add(t);
+  });
+
+  amap.on('click', () => { if (amapSel) clearSel(); });
+  amap.setFitView(fitOverlays, false, [30, 30, 30, 30]);
+  mapBox.classList.add('amap-mode');
+  window.__amapDBG = { map: amap, routes: amapRoutes, overlays: amap.getAllOverlays() };
+}
+
+function showMapTip(e, o){
+  const p = nodeById(o.p), d = nodeById(o.d);
+  tip.innerHTML = `${p.name} → ${d.name}<br><b>${o.n} 单</b> · ${fmt(Math.round(o.amount))} 元 · 均 ${(o.distance/o.n).toFixed(1)} km`;
+  tip.style.left = e.pixel.x + 'px';
+  tip.style.top = e.pixel.y + 'px';
+  tip.style.opacity = 1;
+}
+const hideMapTip = () => { tip.style.opacity = 0; };
+
+function selectNode(nd){
+  amapSel = { type:'node', nd };
+  amapRoutes.forEach(rec => amapSetStyle(rec, (rec.o.p === nd.i || rec.o.d === nd.i) ? 'hot' : 'dim'));
+  const rel = VIZ.od.filter(o => o.p === nd.i || o.d === nd.i).sort((a,b)=>b.n-a.n);
+  const flt = $('#mapFilter');
+  flt.style.display = 'flex';
+  flt.querySelector('span').innerHTML = `已选地点：<b>${nd.name}</b> · ${rel.length} 条相关线路`;
+  const mi = $('#mapInfo');
+  mi.style.display = 'block';
+  mi.innerHTML = `<button class="x" id="miX">✕</button><b>${nd.name}</b>（${nd.district}）· 上车 ${nd.p} 次 · 下车 ${nd.dr} 次<br>` +
+    rel.slice(0,3).map(o => `${nodeById(o.p).name} → ${nodeById(o.d).name}：<b>${o.n} 单</b> / ¥${fmt(Math.round(o.amount))}`).join('<br>') +
+    (rel.length > 3 ? `<br>…共 ${rel.length} 条相关线路` : '');
+  $('#miX').onclick = clearSel;
+}
+function selectRoute(rec){
+  amapSel = { type:'route', rec };
+  amapRoutes.forEach(r => amapSetStyle(r, r === rec ? 'hot' : 'dim'));
+  const o = rec.o, p = nodeById(o.p), d = nodeById(o.d);
+  const flt = $('#mapFilter');
+  flt.style.display = 'flex';
+  flt.querySelector('span').innerHTML = `已选线路：<b>${p.name} → ${d.name}</b>`;
+  const mi = $('#mapInfo');
+  mi.style.display = 'block';
+  mi.innerHTML = `<button class="x" id="miX">✕</button><b>${p.name} → ${d.name}</b><br>` +
+    `${o.n} 单 · 累计 ¥${fmt(Math.round(o.amount))} · 均 ${(o.distance/o.n).toFixed(1)} km · 均 ¥${(o.amount/o.n).toFixed(1)}/单`;
+  $('#miX').onclick = clearSel;
+}
+function clearSel(){
+  amapSel = null;
+  amapRoutes.forEach(r => amapSetStyle(r, 'normal'));
+  $('#mapFilter').style.display = 'none';
+  $('#mapInfo').style.display = 'none';
+}
+$('#mfClear').addEventListener('click', clearSel);
+
+function useStaticMap(){
+  $('#amapDiv').style.display = 'none';
+  $('#mapInner').style.display = 'block';
+  drawMap();
+}
+loadAmap().then(ok => {
+  if (ok){ try { buildAmap(); return; } catch(e){ console.warn('AMap 初始化失败，回退静态图', e); } }
+  useStaticMap();
+});
+
+/* ---------- 地图缩放 / 拖拽（捏合 & 滚轮 & 按钮） ---------- */
+const mapBox = $('#mapBox'), mapInner = $('#mapInner');
+let mz = { s:1, tx:0, ty:0 };
+function mapApply(){
+  mapInner.style.transform = `translate(${mz.tx.toFixed(1)}px, ${mz.ty.toFixed(1)}px) scale(${mz.s.toFixed(3)})`;
+}
+function mapClamp(){
+  const r = mapBox.getBoundingClientRect();
+  mz.tx = Math.min(0, Math.max(r.width * (1 - mz.s), mz.tx));
+  mz.ty = Math.min(0, Math.max(r.height * (1 - mz.s), mz.ty));
+}
+function mapZoomAt(cx, cy, f){
+  const ns = Math.max(1, Math.min(6, mz.s * f));
+  const k = ns / mz.s;
+  mz.tx = cx - (cx - mz.tx) * k;
+  mz.ty = cy - (cy - mz.ty) * k;
+  mz.s = ns;
+  if (mz.s === 1){ mz.tx = 0; mz.ty = 0; }
+  mapClamp(); mapApply();
+}
+function vpt(e){ const r = mapBox.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; }
+mapBox.addEventListener('wheel', e => {
+  if (AMapOK) return;   // 交互地图模式下由高德接管
+  e.preventDefault();
+  const [x, y] = vpt(e);
+  mapZoomAt(x, y, (e.deltaY < 0 ? 1.18 : 1/1.18) * (e.ctrlKey ? 1.6 : 1));
+}, { passive:false });
+mapBox.addEventListener('dblclick', e => { if (AMapOK) return; const [x, y] = vpt(e); mapZoomAt(x, y, 1.7); });
+
+const mPtrs = new Map();
+let mPinch = null;
+mapBox.addEventListener('pointerdown', e => {
+  if (AMapOK) return;
+  mPtrs.set(e.pointerId, [e.clientX, e.clientY]);
+  mapBox.setPointerCapture(e.pointerId);
+  mapBox.classList.add('dragging');
+  if (mPtrs.size === 2){
+    const [p1, p2] = [...mPtrs.values()];
+    mPinch = {
+      d: Math.hypot(p1[0]-p2[0], p1[1]-p2[1]),
+      mx: (p1[0]+p2[0])/2, my: (p1[1]+p2[1])/2
+    };
+  }
+});
+mapBox.addEventListener('pointermove', e => {
+  if (!mPtrs.has(e.pointerId)) return;
+  const prev = mPtrs.get(e.pointerId);
+  mPtrs.set(e.pointerId, [e.clientX, e.clientY]);
+  if (mPtrs.size === 1){
+    // 单指/鼠标拖拽
+    mz.tx += e.clientX - prev[0];
+    mz.ty += e.clientY - prev[1];
+    mapClamp(); mapApply();
+  } else if (mPtrs.size === 2 && mPinch){
+    // 双指捏合：以中点为锚缩放 + 跟随中点平移
+    const [p1, p2] = [...mPtrs.values()];
+    const d = Math.hypot(p1[0]-p2[0], p1[1]-p2[1]);
+    const mx = (p1[0]+p2[0])/2, my = (p1[1]+p2[1])/2;
+    mz.tx += mx - mPinch.mx; mz.ty += my - mPinch.my;
+    const r = mapBox.getBoundingClientRect();
+    if (mPinch.d > 0) mapZoomAt(mx - r.left, my - r.top, d / mPinch.d);
+    mPinch = { d, mx, my };
+  }
+});
+const mUp = e => {
+  mPtrs.delete(e.pointerId);
+  if (mPtrs.size < 2) mPinch = null;
+  if (mPtrs.size === 0) mapBox.classList.remove('dragging');
+};
+mapBox.addEventListener('pointerup', mUp);
+mapBox.addEventListener('pointercancel', mUp);
+$('#zin').addEventListener('click', () => { if (AMapOK){ amap.zoomIn(); return; } const r = mapBox.getBoundingClientRect(); mapZoomAt(r.width/2, r.height/2, 1.5); });
+$('#zout').addEventListener('click', () => { if (AMapOK){ amap.zoomOut(); return; } const r = mapBox.getBoundingClientRect(); mapZoomAt(r.width/2, r.height/2, 1/1.5); });
+$('#zreset').addEventListener('click', () => { if (AMapOK){ clearSel(); amap.setFitView(null, false, [30,30,30,30]); return; } mz = { s:1, tx:0, ty:0 }; mapApply(); });
+
+const topOd = VIZ.od[0];
+$('#mapFoot').innerHTML = `最热线路：<b>${nodeById(topOd.p).name} → ${nodeById(topOd.d).name}</b>，${topOd.n} 单 / ${fmt(Math.round(topOd.amount))} 元；另可将任一地点设为"常用点"过滤视图（正式版交互）。`;
+
+/* ---------- ② 词云 ---------- */
+const T_P = ['#1F7A6D','#2E8B7E','#3E9C8D','#57AB9C','#48937f'];
+const T_D = ['#C8553A','#D9682A','#D49815','#B85A1F','#E6A823'];
+let cloudMode = 'all';
+
+function buildCloudItems(){
+  const m = new Map();
+  VIZ.nodes.forEach(nd => {
+    if (nd.p > 0 && (cloudMode !== 'd')) m.set(nd.name, {t: nd.name, f: nd.p, c: 'p', p: nd.p, dr: nd.dr});
+    if (nd.dr > 0 && (cloudMode !== 'p')){
+      if (m.has(nd.name) && nd.dr > m.get(nd.name).f) m.set(nd.name, {t: nd.name, f: nd.dr, c: 'd', p: nd.p, dr: nd.dr});
+      else if (!m.has(nd.name)) m.set(nd.name, {t: nd.name, f: nd.dr, c: 'd', p: nd.p, dr: nd.dr});
+    }
+  });
+  return [...m.values()].sort((a,b) => b.f - a.f);
+}
+
+let cloudSel = -1;   // 选中的词在 items 中的下标
+function drawCloud(){
+  const cv = $('#cloudCv');
+  const W = cv.parentElement.clientWidth, H = Math.round(W * 0.62);
+  const dpr = window.devicePixelRatio || 1;
+  cv.width = W * dpr; cv.height = H * dpr;
+  cv.style.height = H + 'px';
+  const ctx = cv.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, W, H);
+  const items = buildCloudItems();
+  cloudItems = items;
+  if (cloudSel >= items.length) cloudSel = -1;
+  const maxF = items[0].f;
+  const rects = [];
+  let placed = 0;
+
+  items.forEach((it, idx) => {
+    let size = 10.5 + Math.sqrt(it.f/maxF) * 21;
+    let label = it.t.length > 12 ? it.t.slice(0, 11) + '…' : it.t;
+    const palette = it.c === 'p' ? T_P : T_D;
+    for (; size >= 9; size *= 0.92){
+      ctx.font = `${size >= 16 ? 800 : 700} ${size.toFixed(1)}px Manrope, system-ui, sans-serif`;
+      const tw = ctx.measureText(label).width, th = size * 1.18;
+      // 阿基米德螺线找位
+      let ok = false, px = 0, py = 0;
+      for (let t = 0; t < 60 * Math.PI; t += 0.32){
+        const r = 2.2 * t;
+        px = W/2 + r * Math.cos(t) * 1.25;
+        py = H/2 + r * Math.sin(t) * 0.78;
+        if (px - tw/2 < 4 || px + tw/2 > W-4 || py - th/2 < 2 || py + th/2 > H-2) continue;
+        ok = true;
+        for (const rc of rects){
+          if (px - tw/2 < rc.x + rc.w + 2 && px + tw/2 > rc.x - 2 && py - th/2 < rc.y + rc.h + 1 && py + th/2 > rc.y - 1){ ok = false; break; }
+        }
+        if (ok) break;
+      }
+      if (ok){
+        const shade = palette[idx % palette.length];
+        ctx.font = `${size >= 16 ? 800 : 700} ${size.toFixed(1)}px Manrope, system-ui, sans-serif`;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        if (idx === cloudSel){   // 选中高亮：纸色底 + 深色描边
+          ctx.fillStyle = 'rgba(255,255,255,0.85)';
+          ctx.fillRect(px - tw/2 - 3, py - th/2, tw + 6, th);
+          ctx.strokeStyle = shade; ctx.lineWidth = 1;
+          ctx.strokeRect(px - tw/2 - 3, py - th/2, tw + 6, th);
+        }
+        ctx.fillStyle = shade;
+        ctx.globalAlpha = (it.f === 1 && idx !== cloudSel) ? 0.78 : 0.96;
+        ctx.fillText(label, px, py);
+        ctx.globalAlpha = 1;
+        rects.push({x: px - tw/2, y: py - th/2, w: tw, h: th, it, label});
+        placed++;
+        break;
+      }
+    }
+  });
+  cloudRects = rects;
+  cv.title = `已排布 ${placed}/${items.length} 个地点 · 点击词语查看次数`;
+}
+let cloudItems = [], cloudRects = [];
+
+/* 词云点击 → 气泡显示次数 */
+const cloudTip = document.createElement('div');
+cloudTip.style.cssText = 'position:absolute;transform:translate(-50%,-115%);background:rgba(42,35,30,0.93);color:#FBF9F3;font-size:11px;font-weight:600;padding:6px 10px;border-radius:9px;white-space:nowrap;opacity:0;transition:opacity .12s;pointer-events:none;z-index:8;';
+cloudTip.innerHTML = '';
+$('.cloudbox').appendChild(cloudTip);
+$('#cloudCv').addEventListener('click', e => {
+  const r = e.target.getBoundingClientRect();
+  const x = e.clientX - r.left, y = e.clientY - r.top;
+  const hit = cloudRects.find(rc => x >= rc.x-2 && x <= rc.x+rc.w+2 && y >= rc.y-2 && y <= rc.y+rc.h+2);
+  if (!hit){ cloudSel = -1; cloudTip.style.opacity = 0; drawCloud(); return; }
+  const same = cloudItems.findIndex((it, i) => it.t === hit.it.t);
+  cloudSel = same;
+  const it = hit.it;
+  const parts = [];
+  if (cloudMode !== 'd' && it.p) parts.push(`上车 <b style="color:#7FD4C5">${it.p}</b> 次`);
+  if (cloudMode !== 'p' && it.dr) parts.push(`下车 <b style="color:#FFB48F">${it.dr}</b> 次`);
+  if (parts.length > 1) parts.push(`合计 <b style="color:#FFE08A">${it.p + it.dr}</b> 次`);
+  cloudTip.innerHTML = `${it.t}<br>${parts.join(' · ')}`;
+  cloudTip.style.left = (hit.x + hit.w/2) + 'px';
+  cloudTip.style.top = hit.y + 'px';
+  cloudTip.style.opacity = 1;
+  drawCloud();
+});
+$('#cloudMode').addEventListener('click', e => {
+  const b = e.target.closest('.chip'); if(!b) return;
+  $('#cloudMode').querySelectorAll('.chip').forEach(c => c.classList.toggle('on', c === b));
+  cloudMode = b.dataset.c;
+  cloudSel = -1; cloudTip.style.opacity = 0;
+  drawCloud();
+});
+
+/* ---------- ③ 线路榜（仅 ≥2 单） ---------- */
+function drawRank(){
+  const top = VIZ.od.filter(o => o.n >= 2);
+  if (!top.length){
+    $('#rankList').innerHTML = `<div style="font-size:12px;color:var(--muted);padding:8px 0;">暂无 ≥2 单的线路</div>`;
+    $('#rankFoot').innerHTML = '';
+    return;
+  }
+  const maxN = top[0].n;
+  $('#rankList').innerHTML = top.map((o, i) => {
+    const p = nodeById(o.p), d = nodeById(o.d);
+    return `<div class="rrow top${i+1}">
+      <div class="no">${i+1}</div>
+      <div class="bd">
+        <div class="rt">${p.name}<span class="ar">→</span>${d.name}</div>
+        <div class="bar"><i style="width:${Math.max(6, o.n/maxN*100).toFixed(0)}%"></i></div>
+        <div class="meta">均 ${(o.distance/o.n).toFixed(1)} km · 均 ¥${(o.amount/o.n).toFixed(1)}</div>
+      </div>
+      <div class="amt"><div class="a tnum">¥${fmt(Math.round(o.amount))}</div><div class="c tnum">${o.n} 单</div></div>
+    </div>`;
+  }).join('');
+  const rest = VIZ.od.length - top.length, restN = VIZ.od.reduce((s,o)=>s+o.n,0) - top.reduce((s,o)=>s+o.n,0);
+  $('#rankFoot').innerHTML = `仅显示 ≥2 单的线路（<b>${top.length}</b> 条）；其余 <b>${rest}</b> 条线路共 ${restN} 单，均为零散单。正式版可切按收入排序。`;
+}
+
+/* ---------- ④ 跨区矩阵 ---------- */
+function drawMat(){
+  const {rows, cols, cells} = VIZ.districts;
+  $('#dmat').style.gridTemplateColumns = `58px repeat(${cols.length},1fr)`;
+  const max = Math.max(...cells.flat());
+  const tot = cells.flat().reduce((a,b)=>a+b,0);
+  let html = `<div class="hd" style="color:var(--muted);font-size:9.5px;">上车＼下车</div>`;
+  html += cols.map(c => `<div class="hd" style="font-size:10px;" title="${c}">${c.replace('回族区','').replace('区','')}</div>`).join('');
+  rows.forEach((r, i) => {
+    html += `<div class="rl">${r}</div>`;
+    cols.forEach((c, j) => {
+      const v = cells[i][j];
+      const bg = v ? `rgba(212,152,21,${(0.10 + 0.75*v/max).toFixed(2)})` : 'var(--ink-3)';
+      html += `<div class="cell tnum" style="${v?`background:${bg};border-color:transparent;`:''}font-size:${v>=10?'11.5px':'10.5px'}">${v||'·'}</div>`;
+    });
+  });
+  html += `<div class="rl" style="color:var(--muted);">合计</div>` + cols.map((c,j)=>{
+    const s = cells.reduce((a,r)=>a+r[j],0);
+    return `<div class="cell tot tnum">${s}</div>`;
+  }).join('');
+  $('#dmat').innerHTML = html;
+  // 最大跨区流
+  let best = null;
+  rows.forEach((r,i)=>cols.forEach((c,j)=>{
+    if (r!==c && cells[i][j] && (!best || cells[i][j]>best.v)) best = {r,c,v:cells[i][j]};
+  }));
+  const same = rows.reduce((s,r,i)=> s + (cols.includes(r)?cells[i][cols.indexOf(r)]:0), 0);
+  $('#matFoot').innerHTML = `最大跨区客流：<b>${best.r} → ${best.c}</b>（${best.v} 单）；区内单 ${same} 单，占 ${Math.round(same/tot*100)}%。`;
+}
+
+/* ---------- ⑤ 时刻热力 ---------- */
+function drawHeat(){
+  const {count} = VIZ.heat;
+  const max = Math.max(...count.flat());
+  const wd = ['一','二','三','四','五','六','日'];
+  let html = `<div></div>` + Array.from({length:24}, (_,h)=>`<div class="hl">${h%3===0?h:''}</div>`).join('');
+  count.forEach((row, i) => {
+    html += `<div class="hl">${wd[i]}</div>`;
+    row.forEach((v, h) => {
+      const bg = v ? `rgba(212,152,21,${(0.12 + 0.8*v/max).toFixed(2)})` : '';
+      html += `<div class="hc" style="${bg?`background:${bg};border-color:transparent;`:''}" title="周${wd[i]} ${h}:00 · ${v} 单"></div>`;
+    });
+  });
+  html += `<div class="axis">` + Array.from({length:24},(_,h)=>`<span>${h%3===0?h+'时':''}</span>`).join('') + `</div>`;
+  $('#heatGrid').innerHTML = html;
+  // 洞察
+  let best = {v:0};
+  count.forEach((row,i)=>row.forEach((v,h)=>{ if(v>best.v) best={v,i,h}; }));
+  const wdFull = ['周一','周二','周三','周四','周五','周六','周日'];
+  const daySum = count.map(r=>r.reduce((a,b)=>a+b,0));
+  const busyDay = daySum.indexOf(Math.max(...daySum));
+  $('#heatFoot').innerHTML = `最晚一次出车：周${wd[best.i]} ${String(best.h).padStart(2,'0')}:00 前后（${best.v} 单）；最忙的一天是<b>${wdFull[busyDay]}</b>（${daySum[busyDay]} 单）。`;
+}
+
+/* ---------- ⑥ 散点 ---------- */
+function drawScat(){
+  const data = VIZ.scatter;
+  const W = $('#scatBox').clientWidth, H = Math.round(W * 0.62);
+  const mL = 34, mR = 10, mT = 12, mB = 26;
+  const YCAP = 5;   // 纵轴上限：超短途高单价订单钉在顶端单独标注
+  const xd = [0, Math.max(30, Math.max(...data.map(s=>s.d))*1.05)];
+  const yd = [0, YCAP];
+  const X = v => mL + (v-xd[0])/(xd[1]-xd[0]) * (W-mL-mR);
+  const Y = v => H-mB - (v-yd[0])/(yd[1]-yd[0]) * (H-mT-mB);
+  const med = arr => { const a=[...arr].sort((x,y)=>x-y); return a[a.length>>1]; };
+  const mD = med(data.map(s=>s.d)), mU = med(data.map(s=>s.u));
+
+  let g = '';
+  for (let t=0; t<=xd[1]; t+=10) g += `<line x1="${X(t)}" y1="${mT}" x2="${X(t)}" y2="${H-mB}" stroke="rgba(42,35,30,0.05)"/>
+    <text x="${X(t)}" y="${H-mB+14}" text-anchor="middle" font-size="9" fill="#9B8E7E">${t}km</text>`;
+  for (let t=0.5; t<=yd[1]; t+=0.5) g += `<line x1="${mL}" y1="${Y(t)}" x2="${W-mR}" y2="${Y(t)}" stroke="rgba(42,35,30,0.05)"/>
+    <text x="${mL-5}" y="${Y(t)+3}" text-anchor="end" font-size="9" fill="#9B8E7E">¥${t.toFixed(1)}</text>`;
+  let overlays = `<line x1="${X(mD)}" y1="${mT}" x2="${X(mD)}" y2="${H-mB}" stroke="rgba(42,35,30,0.3)" stroke-dasharray="3 4"/>
+    <line x1="${mL}" y1="${Y(mU)}" x2="${W-mR}" y2="${Y(mU)}" stroke="rgba(42,35,30,0.3)" stroke-dasharray="3 4"/>
+    <text x="${X(mD)+4}" y="${mT+9}" font-size="9" fill="#9B8E7E">里程中位 ${mD.toFixed(1)}km</text>
+    <text x="${W-mR-4}" y="${Y(mU)-5}" text-anchor="end" font-size="9" fill="#9B8E7E">单价中位 ¥${mU.toFixed(2)}/km</text>
+    <text x="${W-mR-6}" y="${mT+10}" text-anchor="end" font-size="10" fill="#D49815" font-weight="700" stroke="#FBF9F3" stroke-width="3" paint-order="stroke">高价区</text>
+    <text x="${W-mR-6}" y="${H-mB-8}" text-anchor="end" font-size="10" fill="#6E6357" font-weight="700" stroke="#FBF9F3" stroke-width="3" paint-order="stroke">薄利长途</text>`;
+
+  data.forEach(s => {
+    const c = s.p === 'gaode' ? '#2E8B7E' : '#D9682A';
+    const r = 2.6 + Math.sqrt(s.a) * 1.1;
+    const clip = s.u > YCAP;
+    const cy = clip ? Y(YCAP) + r * 0.4 : Y(s.u);
+    if (clip) g += `<path d="M${X(s.d).toFixed(1)},${(cy-r-3).toFixed(1)} l-3.2,5 h6.4 z" fill="${c}"/>`;
+    g += `<circle cx="${X(s.d).toFixed(1)}" cy="${cy.toFixed(1)}" r="${r.toFixed(1)}" fill="${c}" opacity="0.62" stroke="#fff" stroke-width="0.8"${clip?' stroke-dasharray="2 1.5"':''}><title>${s.d}km · ¥${s.a} · ¥${s.u}/km · ${s.p==='gaode'?'高德':'滴滴'}${clip?'（超出上限，钉在顶端）':''}</title></circle>`;
+  });
+  g += overlays;
+  $('#scatBox').innerHTML = `<svg viewBox="0 0 ${W} ${H}">${g}</svg>`;
+  const hi = data.filter(s=>s.u>mU && s.d>mD).length;
+  const far = data.filter(s=>s.d>=20);
+  const ob = data.filter(s=>s.u>YCAP).sort((a,b)=>b.u-a.u)[0];
+  $('#scatFoot').innerHTML = `中位数参考线：${mD.toFixed(1)} km / ¥${mU.toFixed(2)} 每公里；双高单（里程与单价均高于中位）仅 <b>${hi}</b> 单，20km 以上长途 ${far.length} 单${ob?`；纵轴按 ¥${YCAP}/km 截断，超短途 ${ob.d}km（¥${ob.u}/km）钉在顶端`:''}。`;
+}
+
+/* ---------- 相机按钮 ---------- */
+document.querySelectorAll('.cam').forEach(b => b.addEventListener('click', () => {
+  const names = {map:'出行路网', cloud:'词云', rank:'线路榜', mat:'跨区矩阵', heat:'时刻热力', scat:'散点'};
+  toast(`「${names[b.dataset.mod]}」生成图片 —— 正式版复用 html2canvas + 系统分享`);
+}));
+let toastT;
+function toast(msg){
+  const t = $('#toast'); t.textContent = msg; t.classList.add('on');
+  clearTimeout(toastT); toastT = setTimeout(()=>t.classList.remove('on'), 2200);
+}
+
+/* ---------- 渲染 ---------- */
+drawCloud(); drawRank(); drawMat(); drawHeat(); drawScat();
+window.addEventListener('resize', () => { drawCloud(); drawScat(); });
+</script>
+</body>
+</html>

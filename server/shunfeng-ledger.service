@@ -1,0 +1,22 @@
+# 顺风·账本云同步服务 systemd 单元
+# 安装：复制到 /etc/systemd/system/shunfeng-ledger.service 后
+#   systemctl daemon-reload && systemctl enable --now shunfeng-ledger
+# 令牌：先执行  systemctl set-environment 无持久性，改为编辑下方 Environment=
+[Unit]
+Description=Shunfeng Ledger Sync Service (FastAPI)
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/shunfeng-ledger
+# 必改：把 your-token-here 换成你自己的长随机串（如 openssl rand -hex 24 的输出）
+Environment=SHUNFENG_TOKEN=your-token-here
+Environment=SHUNFENG_DB=/root/shunfeng-ledger/shunfeng-ledger.db
+Environment=SHUNFENG_PORT=8787
+ExecStart=/root/shunfeng-ledger/venv/bin/uvicorn app:app --host 0.0.0.0 --port 8787 --workers 1
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

@@ -1,7 +1,9 @@
 # Gradle
 .gradle/
 build/
-app/build/
+android-app/.gradle/
+android-app/build/
+android-app/app/build/
 local.properties
 captures/
 
@@ -13,11 +15,16 @@ captures/
 # 签名密钥（私钥与密码不得入库）
 *.jks
 *.keystore
+android-app/keystore-credentials.txt
 
 # 构建产物
 *.apk
-!release/*.apk
 output.json
 
-# 本地/环境相关
-mise.toml
+# 真实订单/位置数据（个人隐私，不入库）
+shunfeng-ledger-2026-*.json
+shunfeng-ledger-2026-*.json.bak
+geocode-cache-*.json
+
+# 开发/工具临时产物
+.trae-html-share-packages/

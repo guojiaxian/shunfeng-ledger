@@ -1,0 +1,242 @@
+{
+  "project_root": "/root/shunfeng-ledger",
+  "selection_required": true,
+  "model_selection_required": false,
+  "confirmation_required": true,
+  "user_confirmed": true,
+  "target_pages": 60,
+  "lines_per_page": 50,
+  "target_lines": 3000,
+  "estimated_selected_lines": 0,
+  "estimated_selected_pages": 0,
+  "estimated_all_candidate_lines": 29696,
+  "estimated_all_candidate_pages": 594,
+  "supplement_rule": "模型优先选择能体现软件核心功能和真实运行逻辑的源码；不足60页时再从其他相关源码中补充；候选源码仍不足时才生成全部代码材料。",
+  "confirmation_stage": "code-selection",
+  "next_action": "请由模型填写 草稿/代码文件选择.json 的抽取选择和选择理由，再让用户确认；确认后运行 confirm_stage.py --stage code-selection。",
+  "instructions": "The script only inventories source files. The model must choose selected/model_reason before user confirmation. Selected files are extracted in full with blank-only lines removed.",
+  "files": [
+    {
+      "path": "android-app/app/src/main/assets/index.html",
+      "selected": false,
+      "line_count": 6186,
+      "material_line_count": 5835,
+      "priority": 20,
+      "selection_tier": "frontend",
+      "evidence": "页面文件证据",
+      "model_reason": "与根目录 index.html 为同一文件的打包复制副本（向 APK assets 同步），为避免代码材料重复不抽取；以根目录最新版 index.html 为准。"
+    },
+    {
+      "path": "android-app/app/src/main/java/com/shunfeng/ledger/MainActivity.kt",
+      "selected": true,
+      "line_count": 599,
+      "material_line_count": 546,
+      "priority": 20,
+      "selection_tier": "supplement",
+      "evidence": "页面文件证据",
+      "model_reason": "Android 原生入口与 WebView 桥接，负责系统文件选择、数据导出、微信导入、OCR 回调、小组件数据同步与快应用跳转，体现原生侧核心逻辑。"
+    },
+    {
+      "path": "android-app/app/src/main/java/com/shunfeng/ledger/OcrEngine.kt",
+      "selected": true,
+      "line_count": 79,
+      "material_line_count": 70,
+      "priority": 20,
+      "selection_tier": "supplement",
+      "evidence": "页面文件证据",
+      "model_reason": "原生 Tesseract OCR 识别引擎，负责订单截图文字识别的技术实现，是智能识别功能的关键组成。"
+    },
+    {
+      "path": "android-app/app/src/main/java/com/shunfeng/ledger/TodayWidgetProvider.kt",
+      "selected": true,
+      "line_count": 220,
+      "material_line_count": 193,
+      "priority": 20,
+      "selection_tier": "supplement",
+      "evidence": "页面文件证据",
+      "model_reason": "桌面小组件数据解析与展示实现，体现无需打开应用即可查看今日收入、单数及最近订单的功能。"
+    },
+    {
+      "path": "index.html",
+      "selected": true,
+      "line_count": 6186,
+      "material_line_count": 5835,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": "前端主应用单文件，包含订单管理、OCR 识别入账、统计图表、日历、出行足迹、数据备份与设置的全部用户功能与业务逻辑，是软件最核心的源码。"
+    },
+    {
+      "path": "preview-stats.html",
+      "selected": false,
+      "line_count": 653,
+      "material_line_count": 625,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": "预览/模拟页面，用于开发期可视化管理与界面预演，不属于最终软件运行逻辑，不抽取。"
+    },
+    {
+      "path": "preview-viz-template.html",
+      "selected": false,
+      "line_count": 1096,
+      "material_line_count": 1026,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": "预览/模拟页面，用于开发期可视化管理与界面预演，不属于最终软件运行逻辑，不抽取。"
+    },
+    {
+      "path": "preview-viz.html",
+      "selected": false,
+      "line_count": 1096,
+      "material_line_count": 1026,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": "预览/模拟页面，用于开发期可视化管理与界面预演，不属于最终软件运行逻辑，不抽取。"
+    },
+    {
+      "path": "recalc-2026-09-04.js",
+      "selected": false,
+      "line_count": 238,
+      "material_line_count": 205,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": "一次性数据处理脚本（里程重算、起终点标准化），不属于应用运行代码，不抽取。"
+    },
+    {
+      "path": "recalc-new-endpoints.js",
+      "selected": false,
+      "line_count": 142,
+      "material_line_count": 123,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": "一次性数据处理脚本（里程重算、起终点标准化），不属于应用运行代码，不抽取。"
+    },
+    {
+      "path": "standardize-endpoints.js",
+      "selected": false,
+      "line_count": 130,
+      "material_line_count": 113,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": "一次性数据处理脚本（里程重算、起终点标准化），不属于应用运行代码，不抽取。"
+    },
+    {
+      "path": "widget-preview.html",
+      "selected": false,
+      "line_count": 286,
+      "material_line_count": 276,
+      "priority": 80,
+      "selection_tier": "frontend",
+      "evidence": "普通源码文件",
+      "model_reason": "预览/模拟页面，用于开发期可视化管理与界面预演，不属于最终软件运行逻辑，不抽取。"
+    },
+    {
+      "path": "build-viz-data.py",
+      "selected": false,
+      "line_count": 218,
+      "material_line_count": 197,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": "开发期可视化数据生成/注入脚本，不属于应用运行代码，不抽取。"
+    },
+    {
+      "path": "geocode-cache-2026-09-04.json",
+      "selected": false,
+      "line_count": 1458,
+      "material_line_count": 1458,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": "订单样本、地理位置缓存与地图投影等数据文件，非源程序代码，不抽取。"
+    },
+    {
+      "path": "geocode-preview.py",
+      "selected": false,
+      "line_count": 101,
+      "material_line_count": 91,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": "开发期可视化数据生成/注入脚本，不属于应用运行代码，不抽取。"
+    },
+    {
+      "path": "inject-viz.py",
+      "selected": false,
+      "line_count": 16,
+      "material_line_count": 15,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": "开发期可视化数据生成/注入脚本，不属于应用运行代码，不抽取。"
+    },
+    {
+      "path": "map-proj.json",
+      "selected": false,
+      "line_count": 1,
+      "material_line_count": 1,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": "订单样本、地理位置缓存与地图投影等数据文件，非源程序代码，不抽取。"
+    },
+    {
+      "path": "shunfeng-ledger-2026-09-04-new-recalc.json",
+      "selected": false,
+      "line_count": 3085,
+      "material_line_count": 3085,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": "订单样本、地理位置缓存与地图投影等数据文件，非源程序代码，不抽取。"
+    },
+    {
+      "path": "shunfeng-ledger-2026-09-04-new.json",
+      "selected": false,
+      "line_count": 1907,
+      "material_line_count": 1907,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": "订单样本、地理位置缓存与地图投影等数据文件，非源程序代码，不抽取。"
+    },
+    {
+      "path": "shunfeng-ledger-2026-09-04-recalc.json",
+      "selected": false,
+      "line_count": 1907,
+      "material_line_count": 1907,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": "订单样本、地理位置缓存与地图投影等数据文件，非源程序代码，不抽取。"
+    },
+    {
+      "path": "shunfeng-ledger-2026-09-04.json",
+      "selected": false,
+      "line_count": 1907,
+      "material_line_count": 1907,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": "订单样本、地理位置缓存与地图投影等数据文件，非源程序代码，不抽取。"
+    },
+    {
+      "path": "shunfeng-ledger-2026-09-06.json",
+      "selected": false,
+      "line_count": 3233,
+      "material_line_count": 3233,
+      "priority": 100,
+      "selection_tier": "supplement",
+      "evidence": "补充源码证据",
+      "model_reason": "订单样本、地理位置缓存与地图投影等数据文件，非源程序代码，不抽取。"
+    }
+  ],
+  "confirmation_note": "用户确认抽取 index.html、MainActivity.kt、OcrEngine.kt、TodayWidgetProvider.kt 四个文件",
+  "confirmed_at": "2026-09-07T07:42:52+00:00"
+}
