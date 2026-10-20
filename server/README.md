@@ -96,7 +96,31 @@ chmod +x /root/shunfeng-ledger/sf.sh
 systemctl restart shunfeng-ledger        # 重启
 systemctl stop shunfeng-ledger           # 停止
 ls -lt /root/shunfeng-ledger/backups/    # 查看备份
-sqlite3 /root/shunfeng-ledger/shunfeng-ledger.db "select rev, updated_at, length(data) from ledger"
+```
+
+## 6.1 数据库结构（多行表，可直接 SQL 查询）
+
+```bash
+sqlite3 /root/shunfeng-ledger/shunfeng-ledger.db
+```
+
+| 表 | 内容 | 关键列 |
+|---|---|---|
+| `meta` | 全局版本号（单行） | `rev`（乐观锁版本，每次推送 +1）、`updated_at` |
+| `orders` | 订单，每单一行 | `id`(主键)、`platform`、`date`、`time`、`amount`、`bonus`、`distance`、`duration`、`pickup`、`dropoff`、`note`、`created_at`、`updated_at`、`extra` |
+| `place_cache` | 地点坐标缓存，每地点一行 | `name`(主键)、`lng`、`lat`、`district`、`city`、`resolved`(完整地址)、`manual`、`ignored`、`extra` |
+| `place_merges` | 地点合并关系 | `alias`(别名主键) → `root`(主名称) |
+
+客户端 JSON 的未知字段统一存入 `extra` JSON 列，读写往返无损。旧版单行 `ledger` 表首次启动自动拆行迁移，原表保留为 `ledger_legacy`。
+
+常用管理查询：
+
+```sql
+SELECT date, platform, amount, pickup, dropoff FROM orders ORDER BY date DESC LIMIT 20;  -- 最近订单
+SELECT COUNT(*), SUM(amount) FROM orders;                                                -- 总单数/总金额
+SELECT name, manual, ignored FROM place_cache WHERE manual = 1;                          -- 人工标注的地点
+SELECT * FROM place_merges;                                                              -- 合并关系
+SELECT rev, updated_at FROM meta;                                                        -- 当前版本
 ```
 
 ## 7. 安全说明
