@@ -9,12 +9,12 @@ After=network.target
 [Service]
 Type=simple
 User=root
-WorkingDirectory=/root/shunfeng-ledger
+WorkingDirectory=/root/shunfeng-ledger/server
 # 必改：把 your-token-here 换成你自己的长随机串（如 openssl rand -hex 24 的输出）
 Environment=SHUNFENG_TOKEN=your-token-here
-Environment=SHUNFENG_DB=/root/shunfeng-ledger/shunfeng-ledger.db
+Environment=SHUNFENG_DB=/root/shunfeng-ledger/server/shunfeng-ledger.db
 Environment=SHUNFENG_PORT=8787
-ExecStart=/root/shunfeng-ledger/venv/bin/uvicorn app:app --host 0.0.0.0 --port 8787 --workers 1
+ExecStart=/root/shunfeng-ledger/server/venv/bin/uvicorn app:app --host 0.0.0.0 --port 8787 --workers 1
 Restart=always
 RestartSec=3
 

@@ -10,7 +10,7 @@
 #   ./sf.sh disable   关闭开机自启
 
 SERVICE=shunfeng-ledger
-DIR=/root/shunfeng-ledger
+DIR=/root/shunfeng-ledger/server
 
 install_unit() {
   # service 文件未安装时自动安装（需 root）

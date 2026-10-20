@@ -8,13 +8,35 @@
 - 已安装 Python 3.8+（CentOS/Ubuntu 一般自带 `python3`，执行 `python3 --version` 确认）
 - 在阿里云控制台「防火墙 / 安全组」放行 TCP 端口 **8787**
 
-## 1. 上传文件
+## 1. 获取代码（git 方式，推荐）
 
-把本目录的 `app.py`、`requirements.txt`、`backup.sh` 上传到服务器 `/root/shunfeng-ledger/`：
+在服务器上直接 clone 仓库（整仓库，服务端代码位于 `server/` 子目录）：
 
 ```bash
-# 本地执行（或在服务器上用 vim 粘贴内容亦可）
-scp app.py requirements.txt backup.sh root@你的公网IP:/root/shunfeng-ledger/
+cd /root
+# 私有仓库需要先配置凭据，见第 1.1 节
+git clone -b feature/cloud-sync https://github.com/guojiaxian/shunfeng-ledger.git shunfeng-ledger
+```
+
+也可以继续用 scp 上传单个文件（scp server/app.py root@IP:/root/shunfeng-ledger/server/），但 git 方式便于回滚与版本追溯。
+
+### 1.1 服务器访问 GitHub 的凭据（私有仓库必需）
+
+**方式 A：HTTPS + Personal Access Token（最简单）**
+
+1. GitHub → Settings → Developer settings → Personal access tokens → Generate new token，勾选 repo 读权限（fine-grained 选 shunfeng-ledger 仓库，Contents: Read-only）
+2. clone 时把 token 放进 URL（只需输入一次，git 会记住）：
+   ```bash
+   git clone -b feature/cloud-sync https://<你的TOKEN>@github.com/guojiaxian/shunfeng-ledger.git shunfeng-ledger
+   ```
+
+**方式 B：SSH Deploy Key（只读，更安全）**
+
+```bash
+ssh-keygen -t ed25519 -N "" -f /root/.ssh/id_ed25519
+cat /root/.ssh/id_ed25519.pub
+# 把输出添加到：GitHub 仓库 → Settings → Deploy keys（不勾选 write）
+git clone -b feature/cloud-sync git@github.com:guojiaxian/shunfeng-ledger.git shunfeng-ledger
 ```
 
 ## 2. 安装依赖并试运行
@@ -61,13 +83,13 @@ systemctl status shunfeng-ledger     # 应显示 active (running)
 ## 4. 每日自动备份（推荐）
 
 ```bash
-chmod +x /root/shunfeng-ledger/backup.sh
+chmod +x /root/shunfeng-ledger/server/backup.sh
 crontab -e
 # 加入一行（每天 03:30 快照，保留最近 7 份）：
-30 3 * * * /root/shunfeng-ledger/backup.sh >> /root/shunfeng-ledger/backup.log 2>&1
+30 3 * * * /root/shunfeng-ledger/server/backup.sh >> /root/shunfeng-ledger/server/backup.log 2>&1
 ```
 
-备份输出在 `/root/shunfeng-ledger/backups/snapshot-日期.json`，可与 App 内「导出数据到文件」互为双保险。
+备份输出在 `/root/shunfeng-ledger/server/backups/snapshot-日期.json`，可与 App 内「导出数据到文件」互为双保险。
 
 ## 5. App 侧配置
 
@@ -130,3 +152,21 @@ SELECT rev, updated_at FROM meta;                                               
   1. 绑定域名 + Let's Encrypt 免费证书，前面加 nginx/Caddy 反代 8787；
   2. 或改用自签证书 + App 端证书锁定。
 - 服务端只暴露 `/api/health`、`/api/data` 三个接口，无其他攻击面；令牌泄露时在服务器改 `SHUNFENG_TOKEN` 后重启即可作废旧令牌。
+
+## 8. 日常更新（git pull 部署）
+
+开发端提交并推送后，服务器上一条命令完成发布：
+
+```bash
+cd /root/shunfeng-ledger && git pull && server/scripts/restart.sh
+```
+
+需要回滚到历史版本时：
+
+```bash
+cd /root/shunfeng-ledger
+git log --oneline -10          # 找到目标提交
+git checkout <commit> -- server/ && server/scripts/restart.sh
+```
+
+注意：`venv/`、`*.db`、`backups/` 均在 .gitignore 中，git pull 不会触碰数据库与依赖；数据库文件迁移自动完成（旧表保留为 ledger_legacy）。若 server/ 下有本地改动导致 pull 冲突，`git checkout -- server/` 丢弃后再 pull（服务器端不要手改代码）。

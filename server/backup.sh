@@ -1,9 +1,9 @@
 #!/bin/sh
 # 每日数据快照备份：从 SQLite 导出 JSON，保留最近 7 份。
 # crontab 示例（每天 3:30 执行）：
-#   30 3 * * * /root/shunfeng-ledger/backup.sh >> /root/shunfeng-ledger/backup.log 2>&1
+#   30 3 * * * /root/shunfeng-ledger/server/backup.sh >> /root/shunfeng-ledger/server/backup.log 2>&1
 set -e
-DIR=/root/shunfeng-ledger
+DIR=/root/shunfeng-ledger/server
 DB="$DIR/shunfeng-ledger.db"
 OUT="$DIR/backups"
 mkdir -p "$OUT"
