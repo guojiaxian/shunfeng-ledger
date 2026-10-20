@@ -150,24 +150,35 @@ export SHUNFENG_KEY_PASSWORD=your_key_password
 
 ```
 shunfeng-ledger/
-├── app/
-│   ├── build.gradle.kts           # 模块构建脚本（含签名配置）
-│   └── src/main/
-│       ├── AndroidManifest.xml    # 组件与权限声明
-│       ├── assets/                # H5 前端 & OCR 训练数据
-│       │   ├── index.html         # 主界面（业务逻辑）
-│       │   └── tessdata/          # Tesseract 语言数据
-│       ├── java/com/shunfeng/ledger/
-│       │   ├── MainActivity.kt    # 主入口 & WebView 桥接
-│       │   ├── OcrEngine.kt       # 原生 Tesseract OCR
-│       │   └── TodayWidgetProvider.kt  # 桌面小组件
-│       └── res/                   # 布局 / 资源 / 主题
-├── docs/screenshots/              # README 中展示的应用截图
-├── build.gradle.kts               # 根构建脚本
-├── settings.gradle.kts            # 工程配置
-├── gradle.properties              # Gradle 全局配置
-├── gradlew / gradlew.bat           # Gradle Wrapper
-├── README.md                      # 项目说明文档
+├── index.html                     # H5 主界面（业务逻辑，单文件应用）
+├── android-app/                   # Android 工程
+│   ├── app/
+│   │   ├── build.gradle.kts       # 模块构建脚本（含签名配置）
+│   │   └── src/main/
+│   │       ├── AndroidManifest.xml    # 组件与权限声明
+│   │       ├── assets/                # H5 前端 & OCR 训练数据
+│   │       │   ├── index.html         # 主界面（业务逻辑）
+│   │       │   └── tessdata/          # Tesseract 语言数据
+│   │       ├── java/com/shunfeng/ledger/
+│   │       │   ├── MainActivity.kt    # 主入口 & WebView 桥接
+│   │       │   ├── OcrEngine.kt       # 原生 Tesseract OCR
+│   │       │   └── TodayWidgetProvider.kt  # 桌面小组件
+│   │       └── res/                   # 布局 / 资源 / 主题
+│   ├── build.gradle.kts           # 根构建脚本
+│   ├── settings.gradle.kts        # 工程配置
+│   └── gradlew / gradlew.bat      # Gradle Wrapper
+├── server/                        # 云端同步服务端（FastAPI + SQLite）
+│   ├── app.py                     # 服务入口
+│   ├── scripts/                   # 启停 / 备份等运维脚本
+│   └── README.md                  # 部署指南
+├── docs/                          # 项目文档
+│   ├── reports/                   # 里程重算等历史报告
+│   ├── 软件著作权申请资料/          # 软著申报材料归档
+│   └── screenshots/               # README 中展示的应用截图
+├── archive/                       # 历史一次性脚本与原型归档
+│   ├── viz-prototype/             # 早期可视化原型（preview-viz 等）
+│   └── recalc-scripts/            # 里程重算一次性脚本与测试素材
+├── releases/                      # 本地构建的 APK 产物（不入库）
 └── .github/workflows/android-ci.yml # CI 自动构建
 ```
 
