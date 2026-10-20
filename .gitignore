@@ -44,5 +44,6 @@ server/*.db.bak
 server/backups/
 server/backup.log
 
-# 文档类文件
-docs/
+# 文档类文件（screenshots 除外：README 引用的截图需入库）
+docs/*
+!docs/screenshots/
