@@ -28,3 +28,13 @@ geocode-cache-*.json
 
 # 开发/工具临时产物
 .trae-html-share-packages/
+
+# 服务端运行时文件（部署后由服务器本地生成，不入库）
+server/venv/
+server/__pycache__/
+server/*.db
+server/*.db-wal
+server/*.db-shm
+server/*.db.bak
+server/backups/
+server/backup.log
